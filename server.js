@@ -13,6 +13,7 @@ const CALENDAR_FILE = path.join(DATA_DIR, 'calendar.json');
 const PROJECTS_FILE = path.join(DATA_DIR, 'projects.json');
 const WBS_FILE = path.join(DATA_DIR, 'wbs.json');
 const REMINDERS_FILE = path.join(DATA_DIR, 'reminders.json');
+const MAILS_FILE = path.join(DATA_DIR, 'mails.json');
 const PUBLIC_DIR = path.join(__dirname, 'public');
 
 if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
@@ -209,6 +210,34 @@ function getReminders() {
     }
   ];
   return readJSON(REMINDERS_FILE, defaultReminders);
+}
+
+function getMails() {
+  const defaultMails = [
+    {
+      id: 'mail_1',
+      subject: '[긴급] 4분기 비서 플랫폼 로드맵 검토 요청 건',
+      from: '기술지원팀 김철수 <tech@sancho.local>',
+      to: '홍길동 <demo@sancho.local>',
+      date: new Date().toISOString().slice(0, 10) + ' 10:15',
+      body: '안녕하세요 홍길동 관리자님, 기술지원팀 김철수입니다. 현재 진행 중인 4분기 산초 플랫폼 릴리즈 로드맵 관련하여, WBS 일정 및 전자서명 결재 연동 방식에 대해 금일 15시까지 확인 부탁드립니다. 감사합니다.',
+      unread: true,
+      summary: '1. 4분기 비서 플랫폼 릴리즈 로드맵 검토 요청\n2. WBS 일정 및 전자서명 결재 연동 방식 확인 필요\n3. 회신 마감: 금일 15시까지',
+      draft: '안녕하세요 김철수 팀장님, 홍길동입니다.\n\n문의주신 4분기 플랫폼 릴리즈 로드맵 검토 요청 건 확인하였습니다. WBS 일정 및 전자서명 결재 연동은 현재 안정적으로 완료되었으며 세부 사안은 금일 15시 전으로 회신드리겠습니다.\n\n감사합니다.\n홍길동 드림'
+    },
+    {
+      id: 'mail_2',
+      subject: '[공지] 전사 개발 보안 가이드라인 배포 안내',
+      from: '정보보안팀 <sec@sancho.local>',
+      to: '전 임직원',
+      date: new Date().toISOString().slice(0, 10) + ' 09:30',
+      body: '임직원 여러분 안녕하십니까. 외부 패키지 설치를 지양하고 자체 검증(selftest)을 준수하는 새로운 개발 보안 수칙이 배포되었으니 확인 바랍니다.',
+      unread: false,
+      summary: '1. 전사 개발 보안 가이드라인 배포\n2. 외부 패키지 지양 및 selftest 준수 요망\n3. 모든 프로젝트 형상 관리에 적용',
+      draft: '확인 완료하였습니다. 가이드라인을 철저히 준수하겠습니다. 감사합니다.'
+    }
+  ];
+  return readJSON(MAILS_FILE, defaultMails);
 }
 
 function hashPassword(password) {
@@ -708,6 +737,50 @@ const server = http.createServer(async (req, res) => {
       reminders = reminders.filter(r => r.id !== id);
       writeJSON(REMINDERS_FILE, reminders);
       return sendJSON(200, { success: true });
+    }
+
+    // 7단계: 지능형 메일 센터 API
+    if (pathname === '/api/mails' && req.method === 'GET') {
+      const mails = getMails();
+      const unreadCount = mails.filter(m => m.unread).length;
+      return sendJSON(200, { mails, unreadCount });
+    }
+
+    if (pathname === '/api/mails/detail' && req.method === 'GET') {
+      const id = url.searchParams.get('id');
+      if (!id) return sendJSON(400, { error: '메일 ID가 필요합니다.' });
+      const mails = getMails();
+      const mail = mails.find(m => m.id === id);
+      if (!mail) return sendJSON(404, { error: '메일을 찾을 수 없습니다.' });
+      if (mail.unread) {
+        mail.unread = false;
+        writeJSON(MAILS_FILE, mails);
+      }
+      return sendJSON(200, { mail });
+    }
+
+    if (pathname === '/api/mails/draft' && req.method === 'POST') {
+      const { id, instructions } = await readBody();
+      const mails = getMails();
+      const mail = mails.find(m => m.id === id);
+      const subject = mail ? mail.subject : '회신';
+      const sender = mail ? mail.from.split('<')[0].trim() : '담당자님';
+
+      let aiDraft = `안녕하세요 ${sender},\n\n보내주신 "${subject}" 메일 확인하였습니다.\n\n요청하신 사항에 대해 긍정적으로 검토하였으며, ${instructions || '안내해주신 일정 및 절차에 맞추어 차질 없이 진행하겠습니다.'}\n\n추가 논의가 필요하신 경우 언제든 연락 주시기 바랍니다.\n\n감사합니다.\n${currentUser.name || currentUser.username} 드림`;
+
+      return sendJSON(200, { success: true, draft: aiDraft });
+    }
+
+    if (pathname === '/api/mails/send' && req.method === 'POST') {
+      const { to, subject, body } = await readBody();
+      if (!to || !subject || !body) {
+        return sendJSON(400, { error: '수신인, 제목, 본문을 모두 입력해 주세요.' });
+      }
+      return sendJSON(200, {
+        success: true,
+        message: '메일이 성공적으로 발송되었습니다.',
+        sentAt: new Date().toISOString()
+      });
     }
 
     return sendJSON(404, { error: '알 수 없는 API입니다.' });

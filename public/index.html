@@ -763,6 +763,128 @@
       from { transform: translateX(100%); opacity: 0; }
       to { transform: translateX(0); opacity: 1; }
     }
+
+    /* 7단계: 지능형 메일 센터 스타일 */
+    .mail-container {
+      display: grid;
+      grid-template-columns: 360px 1fr;
+      gap: 20px;
+      height: calc(100vh - 160px);
+      min-height: 520px;
+    }
+    .mail-sidebar {
+      background: #FFFFFF;
+      border: 1px solid var(--border-soft);
+      border-radius: 16px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .mail-sidebar-header {
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border-soft);
+      font-weight: 700;
+      font-size: 15px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .mail-list {
+      flex: 1;
+      overflow-y: auto;
+      list-style: none;
+    }
+    .mail-item {
+      padding: 14px 18px;
+      border-bottom: 1px solid #F3F4F6;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .mail-item:hover {
+      background: #F9FAFB;
+    }
+    .mail-item.selected {
+      background: #FFFBEB;
+      border-left: 3px solid var(--amber-warm);
+    }
+    .mail-item.unread .mail-subject {
+      font-weight: 700;
+      color: #111827;
+    }
+    .mail-item-header {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 4px;
+      font-size: 12px;
+      color: #6B7280;
+    }
+    .mail-subject {
+      font-size: 13px;
+      color: #374151;
+      margin-bottom: 4px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .mail-preview {
+      font-size: 12px;
+      color: #9CA3AF;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    
+    .mail-content-pane {
+      background: #FFFFFF;
+      border: 1px solid var(--border-soft);
+      border-radius: 16px;
+      padding: 24px 28px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+      overflow-y: auto;
+    }
+    .ai-summary-box {
+      background: linear-gradient(135deg, #FFFBEB 0%, #FEF3C7 100%);
+      border: 1px solid var(--border-warm);
+      border-radius: 12px;
+      padding: 16px 20px;
+    }
+    .ai-summary-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: #92400E;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .ai-summary-text {
+      font-size: 13px;
+      color: #78350F;
+      line-height: 1.6;
+      white-space: pre-line;
+    }
+    .mail-reply-box {
+      border: 1px solid var(--border-soft);
+      border-radius: 12px;
+      padding: 18px;
+      background: #FAFAFA;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .mail-reply-textarea {
+      width: 100%;
+      height: 120px;
+      padding: 12px;
+      border: 1px solid var(--border-soft);
+      border-radius: 8px;
+      font-family: inherit;
+      font-size: 13px;
+      outline: none;
+      resize: vertical;
+    }
   </style>
 </head>
 <body>
@@ -1038,6 +1160,27 @@
       </div>
     </div>
 
+    <!-- 6) 지능형 메일 센터 뷰 패널 (7단계) -->
+    <div id="view-mail" class="view-panel" style="display:none;">
+      <div class="mail-container">
+        <!-- 왼쪽: 수신함 목록 -->
+        <div class="mail-sidebar">
+          <div class="mail-sidebar-header">
+            <span>📥 받은 메일함</span>
+            <span class="brand-badge" id="mailUnreadBadge">0건 읽지 않음</span>
+          </div>
+          <ul class="mail-list" id="mailInboxList"></ul>
+        </div>
+
+        <!-- 오른쪽: 메일 본문 + AI 3줄 요약 + 비즈니스 답장 초안 -->
+        <div class="mail-content-pane" id="mailDetailPane">
+          <div style="color: var(--text-muted); text-align: center; margin: auto;">
+            좌측에서 확인할 메일을 선택해 주세요.
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- 우측 상단 토스트 알림 컨테이너 -->
     <div id="toastContainer" class="toast-container"></div>
   </main>
@@ -1096,6 +1239,9 @@
         } else if (view === 'reminder') {
           subtitle.textContent = '크론형 정기 스케줄러 & 실시간 팝업 알림 센터';
           loadReminders();
+        } else if (view === 'mail') {
+          subtitle.textContent = '지능형 메일 센터: 핵심 3줄 요약 & 공손한 비즈니스 답장 초안';
+          loadMails();
         } else {
           subtitle.textContent = `${item.querySelector('span:last-child').textContent} 모듈이 연동 준비 중입니다.`;
         }
@@ -1600,6 +1746,133 @@
 
     window.testNotificationAlert = function() {
       showToast('[정기 브리핑] 아침 9시 데일리 모닝 브리핑 스케줄 알림이 작동했습니다!');
+    };
+
+    // 7단계: 지능형 메일 센터 데이터 로드 및 처리
+    let currentSelectedMailId = null;
+
+    async function loadMails() {
+      try {
+        const res = await fetch('/api/mails');
+        if (!res.ok) return;
+        const data = await res.json();
+        document.getElementById('mailUnreadBadge').textContent = `${data.unreadCount}건 읽지 않음`;
+
+        const listEl = document.getElementById('mailInboxList');
+        listEl.innerHTML = '';
+
+        data.mails.forEach((m) => {
+          const li = document.createElement('li');
+          li.className = `mail-item ${m.unread ? 'unread' : ''} ${m.id === currentSelectedMailId ? 'selected' : ''}`;
+          li.innerHTML = `
+            <div class="mail-item-header">
+              <span>${m.from.split('<')[0]}</span>
+              <span>${m.date.split(' ')[1] || m.date}</span>
+            </div>
+            <div class="mail-subject">${m.unread ? '🔴 ' : ''}${m.subject}</div>
+            <div class="mail-preview">${m.body}</div>
+          `;
+          li.addEventListener('click', () => selectMail(m.id));
+          listEl.appendChild(li);
+        });
+
+        if (!currentSelectedMailId && data.mails.length > 0) {
+          selectMail(data.mails[0].id);
+        }
+      } catch (err) {
+        console.error('메일 목록 로드 실패:', err);
+      }
+    }
+
+    async function selectMail(id) {
+      currentSelectedMailId = id;
+      try {
+        const res = await fetch(`/api/mails/detail?id=${encodeURIComponent(id)}`);
+        if (!res.ok) return;
+        const data = await res.json();
+        const m = data.mail;
+
+        const pane = document.getElementById('mailDetailPane');
+        pane.innerHTML = `
+          <div style="border-bottom: 1px solid var(--border-soft); padding-bottom: 16px;">
+            <h2 style="font-size: 18px; font-weight: 700; color: #111827; margin-bottom: 10px;">${m.subject}</h2>
+            <div style="font-size: 13px; color: #4B5563; display: flex; flex-direction: column; gap: 4px;">
+              <div><strong>보낸 사람:</strong> ${m.from}</div>
+              <div><strong>받는 사람:</strong> ${m.to}</div>
+              <div><strong>수신 시간:</strong> ${m.date}</div>
+            </div>
+          </div>
+
+          <!-- AI 핵심 3줄 요약 카드 -->
+          <div class="ai-summary-box">
+            <div class="ai-summary-title">
+              <span>✨</span>
+              <span>산초 AI가 추출한 핵심 3줄 요약</span>
+            </div>
+            <div class="ai-summary-text">${m.summary || '요약본을 생성 중입니다...'}</div>
+          </div>
+
+          <!-- 본문 내용 -->
+          <div style="font-size: 14px; line-height: 1.8; color: #1F2937; white-space: pre-line; background: #FFFFFF; padding: 12px 0;">
+            ${m.body}
+          </div>
+
+          <!-- 비즈니스 답장 초안 작성 및 발송 영역 -->
+          <div class="mail-reply-box">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span style="font-size: 13px; font-weight: 700; color: #111827;">✉️ 공손한 비즈니스 답장 초안 (AI 작성)</span>
+              <button class="btn-move" onclick="regenerateDraft('${m.id}')">🔄 AI 초안 다시 작성</button>
+            </div>
+            <textarea id="replyDraftTextarea" class="mail-reply-textarea">${m.draft || ''}</textarea>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <input type="text" id="draftPromptInput" class="cal-input" style="flex: 1; margin-right: 12px;" placeholder="추가 전달 지침 (예: 다음 주 화요일 오후에 미팅하자고 답변해줘)">
+              <button class="cal-submit-btn" onclick="sendApprovedMail('${m.from}', '${m.subject}')">안전 승인 및 발송</button>
+            </div>
+          </div>
+        `;
+      } catch (e) {
+        console.error('메일 상세 로드 실패:', e);
+      }
+    }
+
+    window.regenerateDraft = async function(id) {
+      const instructions = document.getElementById('draftPromptInput').value.trim();
+      try {
+        const res = await fetch('/api/mails/draft', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id, instructions })
+        });
+        if (res.ok) {
+          const data = await res.json();
+          document.getElementById('replyDraftTextarea').value = data.draft;
+          showToast('산초 AI가 새로운 비즈니스 답장 초안을 생성했습니다.');
+        }
+      } catch (e) {
+        alert('초안 생성 실패');
+      }
+    };
+
+    window.sendApprovedMail = async function(to, subject) {
+      const body = document.getElementById('replyDraftTextarea').value.trim();
+      if (!body) {
+        alert('발송할 회신 본문을 입력해 주세요.');
+        return;
+      }
+      if (!confirm(`[최종 안전 승인]\n수신인: ${to}\n제목: Re: ${subject}\n\n위 내용으로 메일을 정식 발송하시겠습니까?`)) return;
+
+      try {
+        const res = await fetch('/api/mails/send', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ to, subject: 'Re: ' + subject, body })
+        });
+        if (res.ok) {
+          showToast('회신 메일이 안전하게 성공적으로 발송되었습니다.');
+        }
+      } catch (e) {
+        alert('발송 실패');
+      }
     };
 
     // 2단계: AI 대화 처리

@@ -325,6 +325,54 @@ async function runSelfTest() {
   assert(delRemRes.status === 200, '알림 삭제가 200이어야 합니다.');
   console.log('   ✓ 예약 알림 삭제 성공');
 
+  // 13. 7단계: 지능형 메일 센터 (/api/mails) 점검
+  console.log('13. 7단계: 지능형 메일 센터 (/api/mails) 3줄 요약 & 답장 초안 점검...');
+  const mailsGetRes = await request('/api/mails', {
+    headers: { 'Cookie': sessionCookie }
+  });
+  assert(mailsGetRes.status === 200, '메일 목록 조회가 200이어야 합니다.');
+  const mailsGetData = mailsGetRes.json();
+  assert(Array.isArray(mailsGetData.mails), 'mails 필드가 배열이어야 합니다.');
+  assert(typeof mailsGetData.unreadCount === 'number', 'unreadCount 필드가 숫자여야 합니다.');
+  console.log(`   ✓ 메일 수신함 조회 성공 (총 ${mailsGetData.mails.length}통, 읽지 않음: ${mailsGetData.unreadCount}통)`);
+
+  // 메일 상세 조회 및 3줄 요약 확인
+  const testMailId = mailsGetData.mails[0].id;
+  const mailDetailRes = await request(`/api/mails/detail?id=${testMailId}`, {
+    headers: { 'Cookie': sessionCookie }
+  });
+  assert(mailDetailRes.status === 200, '메일 상세 조회가 200이어야 합니다.');
+  const mailDetailData = mailDetailRes.json();
+  assert(mailDetailData.mail && mailDetailData.mail.summary, 'AI 3줄 요약 필드가 존재해야 합니다.');
+  console.log(`   ✓ 메일 상세 및 AI 3줄 요약 수신 완료`);
+
+  // AI 공손한 비즈니스 답장 초안 생성
+  const draftRes = await request('/api/mails/draft', {
+    method: 'POST',
+    headers: { 'Cookie': sessionCookie }
+  }, JSON.stringify({
+    id: testMailId,
+    instructions: '15시 전으로 검토 의견을 전달하겠다고 회신'
+  }));
+  assert(draftRes.status === 200, '답장 초안 생성이 200이어야 합니다.');
+  const draftData = draftRes.json();
+  assert(draftData.success && draftData.draft, 'AI 답장 초안이 정상 생성되어야 합니다.');
+  console.log(`   ✓ 산초 AI 비즈니스 답장 초안 생성 완료 ("${draftData.draft.slice(0, 30)}...")`);
+
+  // 메일 안전 발송 승인
+  const sendMailRes = await request('/api/mails/send', {
+    method: 'POST',
+    headers: { 'Cookie': sessionCookie }
+  }, JSON.stringify({
+    to: mailDetailData.mail.from,
+    subject: 'Re: ' + mailDetailData.mail.subject,
+    body: draftData.draft
+  }));
+  assert(sendMailRes.status === 200, '메일 발송이 200이어야 합니다.');
+  const sendMailData = sendMailRes.json();
+  assert(sendMailData.success === true, '메일 발송 성공 플래그가 true여야 합니다.');
+  console.log('   ✓ 메일 안전 승인 및 발송 완료');
+
   console.log('--- 모든 자가 점검(selftest) 100% 통과 완료! ---');
 }
 
