@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>로그인 - 나의 AI 비서 Sancho</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-cream: #FBF9F5;
+      --card-white: #FFFFFF;
+      --amber-warm: #D97706;
+      --amber-glow: rgba(217, 119, 6, 0.15);
+      --text-main: #1F2937;
+      --text-muted: #6B7280;
+      --border-soft: #E5E7EB;
+      --border-warm: #FDE68A;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    
+    body {
+      font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
+      background-color: var(--bg-cream);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* 은은한 앰버 웜 조명 효과 (핀터레스트 무드 반영) */
+    body::before {
+      content: '';
+      position: absolute;
+      width: 500px;
+      height: 500px;
+      background: radial-gradient(circle, rgba(251, 191, 36, 0.12) 0%, rgba(251, 249, 245, 0) 70%);
+      top: -150px;
+      left: -150px;
+      border-radius: 50%;
+      pointer-events: none;
+    }
+    body::after {
+      content: '';
+      position: absolute;
+      width: 600px;
+      height: 600px;
+      background: radial-gradient(circle, rgba(217, 119, 6, 0.08) 0%, rgba(251, 249, 245, 0) 70%);
+      bottom: -200px;
+      right: -200px;
+      border-radius: 50%;
+      pointer-events: none;
+    }
+
+    .login-container {
+      width: 100%;
+      max-width: 420px;
+      padding: 20px;
+      z-index: 1;
+    }
+
+    .card {
+      background: var(--card-white);
+      border: 1px solid var(--border-soft);
+      border-radius: 20px;
+      padding: 44px 36px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.03), 0 1px 3px rgba(0, 0, 0, 0.02);
+      transition: all 0.3s ease;
+    }
+
+    .card:hover {
+      box-shadow: 0 16px 40px rgba(217, 119, 6, 0.08), 0 1px 3px rgba(0, 0, 0, 0.02);
+      border-color: var(--border-warm);
+    }
+
+    .brand {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+
+    .brand-badge {
+      display: inline-block;
+      padding: 5px 14px;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--amber-warm);
+      background: var(--amber-glow);
+      border-radius: 20px;
+      margin-bottom: 12px;
+      letter-spacing: 0.5px;
+    }
+
+    .brand h1 {
+      font-size: 24px;
+      font-weight: 700;
+      color: #111827;
+      letter-spacing: -0.5px;
+      margin-bottom: 8px;
+    }
+
+    .brand p {
+      font-size: 14px;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: #374151;
+    }
+
+    .form-input {
+      width: 100%;
+      padding: 12px 16px;
+      font-size: 15px;
+      background: #FAFAFA;
+      border: 1px solid var(--border-soft);
+      border-radius: 12px;
+      color: var(--text-main);
+      outline: none;
+      transition: all 0.2s ease;
+    }
+
+    .form-input:focus {
+      background: #FFFFFF;
+      border-color: var(--amber-warm);
+      box-shadow: 0 0 0 4px var(--amber-glow);
+    }
+
+    .btn-submit {
+      width: 100%;
+      padding: 13px;
+      font-size: 15px;
+      font-weight: 600;
+      background: #18181B;
+      color: #FFFFFF;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      margin-top: 10px;
+      transition: all 0.2s ease;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .btn-submit:hover {
+      background: #27272A;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    }
+
+    .btn-submit:active {
+      transform: translateY(0);
+    }
+
+    .alert {
+      padding: 12px 14px;
+      border-radius: 10px;
+      font-size: 13px;
+      margin-bottom: 20px;
+      display: none;
+    }
+
+    .alert-error {
+      background: #FEF2F2;
+      color: #991B1B;
+      border: 1px solid #FEE2E2;
+    }
+
+    .alert-info {
+      background: #FEF3C7;
+      color: #92400E;
+      border: 1px solid #FDE68A;
+    }
+
+    .footer-note {
+      text-align: center;
+      margin-top: 24px;
+      font-size: 12px;
+      color: #9CA3AF;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="login-container">
+    <div class="card">
+      <div class="brand">
+        <span class="brand-badge" id="modeBadge">로컬 전용 비서</span>
+        <h1 id="titleText">나의 AI 비서 Sancho</h1>
+        <p id="descText">로그인하여 대시보드에 접속하세요.</p>
+      </div>
+
+      <div id="alertBox" class="alert"></div>
+
+      <form id="authForm">
+        <!-- 첫 사용자(관리자 등록) 시 노출 -->
+        <div class="form-group" id="nameGroup" style="display: none;">
+          <label for="name">관리자 이름</label>
+          <input type="text" id="name" class="form-input" placeholder="예: 홍길동">
+        </div>
+
+        <div class="form-group">
+          <label for="username">아이디</label>
+          <input type="text" id="username" class="form-input" placeholder="아이디 입력" required autocomplete="username">
+        </div>
+
+        <div class="form-group">
+          <label for="password">비밀번호</label>
+          <input type="password" id="password" class="form-input" placeholder="비밀번호 입력" required autocomplete="current-password">
+        </div>
+
+        <button type="submit" id="submitBtn" class="btn-submit">로그인</button>
+      </form>
+
+      <div class="footer-note">
+        Node.js Native · Local AI Brain · Zero Cloud Storage
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let isSetupMode = false;
+
+    const alertBox = document.getElementById('alertBox');
+    const nameGroup = document.getElementById('nameGroup');
+    const titleText = document.getElementById('titleText');
+    const descText = document.getElementById('descText');
+    const submitBtn = document.getElementById('submitBtn');
+    const modeBadge = document.getElementById('modeBadge');
+
+    function showAlert(msg, isError = true) {
+      alertBox.textContent = msg;
+      alertBox.className = 'alert ' + (isError ? 'alert-error' : 'alert-info');
+      alertBox.style.display = 'block';
+    }
+
+    function hideAlert() {
+      alertBox.style.display = 'none';
+    }
+
+    // 서버 초기 상태 확인 (관리자 계정 존재 여부 및 로그인 상태)
+    async function checkStatus() {
+      try {
+        const res = await fetch('/api/status');
+        const data = await res.json();
+        
+        if (data.loggedIn) {
+          window.location.href = '/index.html';
+          return;
+        }
+
+        if (!data.hasUsers) {
+          isSetupMode = true;
+          modeBadge.textContent = '초기 관리자 설정';
+          titleText.textContent = '관리자 계정 만들기';
+          descText.textContent = '산초를 시작하기 위해 첫 관리자 계정을 등록해 주세요.';
+          nameGroup.style.display = 'block';
+          submitBtn.textContent = '계정 생성 및 비서 시작';
+          showAlert('등록된 계정이 없습니다. 첫 관리자 계정을 만들어 주세요.', false);
+        }
+      } catch (e) {
+        showAlert('서버와 통신할 수 없습니다. (server.js 실행 확인 필요)');
+      }
+    }
+
+    document.getElementById('authForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      hideAlert();
+
+      const username = document.getElementById('username').value.trim();
+      const password = document.getElementById('password').value;
+      const name = document.getElementById('name').value.trim();
+
+      const endpoint = isSetupMode ? '/api/setup' : '/api/login';
+      const payload = isSetupMode ? { name, username, password } : { username, password };
+
+      try {
+        submitBtn.disabled = true;
+        submitBtn.textContent = isSetupMode ? '계정 생성 중...' : '로그인 중...';
+
+        const res = await fetch(endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        const result = await res.json();
+
+        if (res.ok) {
+          window.location.href = '/index.html';
+        } else {
+          showAlert(result.error || '요청 처리에 실패했습니다.');
+        }
+      } catch (err) {
+        showAlert('네트워크 오류가 발생했습니다.');
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = isSetupMode ? '계정 생성 및 비서 시작' : '로그인';
+      }
+    });
+
+    checkStatus();
+  </script>
+</body>
+</html>
