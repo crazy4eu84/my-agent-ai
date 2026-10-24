@@ -373,7 +373,102 @@ async function runSelfTest() {
   assert(sendMailData.success === true, '메일 발송 성공 플래그가 true여야 합니다.');
   console.log('   ✓ 메일 안전 승인 및 발송 완료');
 
-  console.log('--- 모든 자가 점검(selftest) 100% 통과 완료! ---');
+  // 14. 8단계: 메신저 (/api/messages) 점검
+  console.log('14. 8단계: 메신저 (/api/messages) 대화 및 AI 원격제어봇 점검...');
+  const msgGetRes = await request('/api/messages?channel=일반', { headers: { 'Cookie': sessionCookie } });
+  assert(msgGetRes.status === 200, '메신저 목록 조회가 200이어야 합니다.');
+  const msgPostRes = await request('/api/messages', {
+    method: 'POST',
+    headers: { 'Cookie': sessionCookie }
+  }, JSON.stringify({ channel: '비서봇', text: '산초야 원격 상태 확인해줘' }));
+  assert(msgPostRes.status === 200, '메신저 메시지 발송 200 성공');
+  const msgPostData = msgPostRes.json();
+  assert(msgPostData.botReply && msgPostData.botReply.text, '비서봇 자동 답장이 생성되어야 합니다.');
+  console.log(`   ✓ 메신저 대화 및 비서봇 자동 답장 수신 완료: "${msgPostData.botReply.text.slice(0, 30)}..."`);
+
+  // 15. 9단계: 회의록 & 음성 STT (/api/meetings) 점검
+  console.log('15. 9단계: 회의록 & 음성 STT 요약/할 일 추출 점검...');
+  const mtgPostRes = await request('/api/meetings', {
+    method: 'POST',
+    headers: { 'Cookie': sessionCookie }
+  }, JSON.stringify({
+    title: '자체점검 릴리즈 전략 회의',
+    transcript: '홍길동: 13단계 모듈을 모두 구축 완료했습니다.\n기술팀: 예, selftest 검증과 Git 커밋을 완료했습니다.'
+  }));
+  assert(mtgPostRes.status === 200, '회의록 생성 200 성공');
+  const mtgPostData = mtgPostRes.json();
+  assert(mtgPostData.meeting && mtgPostData.meeting.summary, '회의 요약이 생성되어야 합니다.');
+  assert(Array.isArray(mtgPostData.meeting.actionItems) && mtgPostData.meeting.actionItems.length > 0, '할 일 목록이 추출되어야 합니다.');
+  console.log(`   ✓ 회의록 AI 요약 및 할 일 ${mtgPostData.meeting.actionItems.length}건 자동 추출 완료`);
+
+  // 16. 10단계: 결재 및 전자서명 날인 (/api/approvals) 점검
+  console.log('16. 10단계: 결재 품의 및 전자직인 날인 점검...');
+  const appPostRes = await request('/api/approvals', {
+    method: 'POST',
+    headers: { 'Cookie': sessionCookie }
+  }, JSON.stringify({
+    title: '자체점검 테스트 기안서',
+    type: '기안서',
+    amount: '0원',
+    content: '자가 검증 통과를 위한 테스트 품의입니다.'
+  }));
+  assert(appPostRes.status === 200, '결재 상신 200 성공');
+  const appPostData = appPostRes.json();
+
+  // 전자서명 직인 날인 승인
+  const approveRes = await request('/api/approvals/approve', {
+    method: 'POST',
+    headers: { 'Cookie': sessionCookie }
+  }, JSON.stringify({ id: appPostData.approval.id }));
+  assert(approveRes.status === 200, '결재 승인 200 성공');
+  const approveData = approveRes.json();
+  assert(approveData.approval.status === '승인', '문서 상태가 승인이어야 합니다.');
+  assert(approveData.approval.signedBy, '서명자가 날인되어야 합니다.');
+  console.log(`   ✓ 전자서명 직인 날인 및 최종 결재 승인 완료 (서명자: ${approveData.approval.signedBy})`);
+
+  // 17. 11단계: 목표 (OKR / KPI) 트래커 점검
+  console.log('17. 11단계: 목표 OKR/KPI 트래커 점검...');
+  const goalGetRes = await request('/api/goals', { headers: { 'Cookie': sessionCookie } });
+  assert(goalGetRes.status === 200, '목표 조회 200 성공');
+  const goalGetData = goalGetRes.json();
+  assert(Array.isArray(goalGetData.goals) && goalGetData.goals.length > 0, '목표 목록이 존재해야 합니다.');
+  console.log(`   ✓ 전사 핵심 목표 ${goalGetData.goals.length}건 및 달성률 트래킹 확인`);
+
+  // 18. 12단계: 공수 자원 분석기 (/api/timesheet) 점검
+  console.log('18. 12단계: 공수 자원 분석기 & AI 병목 진단 점검...');
+  const tsGetRes = await request('/api/timesheet', { headers: { 'Cookie': sessionCookie } });
+  assert(tsGetRes.status === 200, '타임시트 조회 200 성공');
+  const tsGetData = tsGetRes.json();
+  assert(tsGetData.analysis && typeof tsGetData.analysis.totalHours === 'number', '공수 총 시간이 계산되어야 합니다.');
+  console.log(`   ✓ 주간 총 공수(${tsGetData.analysis.totalHours}h) 및 AI 병목 진단 확인`);
+
+  // 19. 13단계: 지식노트 & 자가진화 스킬 워크플로 점검
+  console.log('19. 13단계: 지식노트 & 자가진화 스킬 워크플로 점검...');
+  const notePostRes = await request('/api/notes', {
+    method: 'POST',
+    headers: { 'Cookie': sessionCookie }
+  }, JSON.stringify({
+    title: '자체점검 업무 매뉴얼',
+    category: '매뉴얼',
+    content: '13단계 모듈 검증 매뉴얼입니다.'
+  }));
+  assert(notePostRes.status === 200, '지식노트 생성 200 성공');
+
+  const skillsGetRes = await request('/api/skills', { headers: { 'Cookie': sessionCookie } });
+  assert(skillsGetRes.status === 200, '스킬 목록 조회 200 성공');
+  const skillsGetData = skillsGetRes.json();
+  const testSkillId = skillsGetData.skills[0].id;
+
+  const runSkillRes = await request('/api/skills/run', {
+    method: 'POST',
+    headers: { 'Cookie': sessionCookie }
+  }, JSON.stringify({ id: testSkillId }));
+  assert(runSkillRes.status === 200, '스킬 실행 200 성공');
+  const runSkillData = runSkillRes.json();
+  assert(runSkillData.success && runSkillData.output, '스킬 실행 결과가 출력되어야 합니다.');
+  console.log(`   ✓ 자가진화 스킬 실행 확인: "${runSkillData.output.slice(0, 35)}..."`);
+
+  console.log('--- 1단계부터 13단계까지 모든 자가 점검(selftest) 100% 무결점 통과 완료! ---');
 }
 
 if (require.main === module) {

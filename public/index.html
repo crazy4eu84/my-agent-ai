@@ -885,6 +885,88 @@
       outline: none;
       resize: vertical;
     }
+
+    /* 8단계: 메신저 스타일 */
+    .messenger-container {
+      display: grid;
+      grid-template-columns: 240px 1fr;
+      gap: 20px;
+      height: calc(100vh - 160px);
+      min-height: 520px;
+    }
+    .channel-list {
+      background: #FFFFFF;
+      border: 1px solid var(--border-soft);
+      border-radius: 16px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .channel-item {
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-size: 14px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: #4B5563;
+      transition: background 0.15s;
+    }
+    .channel-item:hover { background: #F3F4F6; }
+    .channel-item.active { background: #18181B; color: #FFFFFF; font-weight: 600; }
+
+    /* 10단계: 전자서명 직인 스타일 */
+    .stamp-seal {
+      border: 2px solid #DC2626;
+      color: #DC2626;
+      border-radius: 50%;
+      width: 58px;
+      height: 58px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      transform: rotate(-12deg);
+      box-shadow: 0 0 4px rgba(220, 38, 38, 0.2);
+      user-select: none;
+    }
+
+    /* 9단계: 마이크 STT 펄스 효과 */
+    .record-btn-pulse {
+      background: #EF4444 !important;
+      animation: pulseRecord 1.5s infinite;
+    }
+    @keyframes pulseRecord {
+      0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.5); }
+      70% { box-shadow: 0 0 0 12px rgba(239, 68, 68, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+    }
+
+    /* 13단계: 스킬 워크플로 카드 그리드 */
+    .skill-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 16px;
+    }
+    .skill-card {
+      background: #FFFFFF;
+      border: 1px solid var(--border-soft);
+      border-radius: 14px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 12px;
+      transition: all 0.2s;
+    }
+    .skill-card:hover {
+      border-color: var(--border-warm);
+      box-shadow: 0 6px 18px var(--amber-glow);
+    }
   </style>
 </head>
 <body>
@@ -1181,6 +1263,197 @@
       </div>
     </div>
 
+    <!-- 7) 메신저 뷰 패널 (8단계) -->
+    <div id="view-messenger" class="view-panel" style="display:none;">
+      <div class="messenger-container">
+        <div class="channel-list">
+          <div style="font-size: 13px; font-weight: 700; color: #111827; margin-bottom: 8px;">💬 대화 채널</div>
+          <div class="channel-item active" onclick="switchChannel('일반')"># 일반 대화방</div>
+          <div class="channel-item" onclick="switchChannel('프로젝트')"># 프로젝트 협업</div>
+          <div class="channel-item" onclick="switchChannel('비서봇')">🤖 산초 원격 제어봇</div>
+        </div>
+        <div class="chat-section" style="padding: 20px;">
+          <h3 id="currentChannelTitle" style="font-size: 16px; margin-bottom: 12px;"># 일반 대화방</h3>
+          <div class="chat-box" id="messengerFeed" style="min-height: 380px;"></div>
+          <div class="chat-input-bar">
+            <input type="text" id="messengerInput" class="chat-input" placeholder="메시지를 입력하세요... (비서봇에게는 원격 지시 가능)">
+            <button class="btn-send" id="messengerSendBtn">전송</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 8) 회의록 & 음성 STT 뷰 패널 (9단계) -->
+    <div id="view-meeting" class="view-panel" style="display:none;">
+      <div class="wbs-container">
+        <div class="wbs-header-row">
+          <div>
+            <h3 style="font-size: 16px; font-weight: 700; color: #111827;">🎙️ 실시간 회의 녹음 & 음성 텍스트 변환 (STT)</h3>
+            <p style="font-size: 13px; color: var(--text-muted); margin-top: 4px;">웹 브라우저 마이크를 통해 실시간 음성을 기록하고 핵심 요약과 할 일을 추출합니다.</p>
+          </div>
+          <button id="recordToggleBtn" class="btn-briefing-action" onclick="toggleAudioRecord()">🔴 음성 녹음 시작</button>
+        </div>
+        <textarea id="sttTranscriptInput" class="mail-reply-textarea" style="height: 100px; margin-bottom: 12px;" placeholder="녹음 중 음성 텍스트가 여기에 실시간으로 기록됩니다... (직접 대화 내용을 타이핑해도 분석 가능)"></textarea>
+        <div style="display: flex; justify-content: flex-end; gap: 10px;">
+          <input type="text" id="meetingTitleInput" class="cal-input" placeholder="회의 안건 제목" style="width: 280px;" value="4분기 비서 플랫폼 긴급 점검 회의">
+          <button class="cal-submit-btn" onclick="saveAndAnalyzeMeeting()">✨ 회의록 분석 & 할 일 자동 추출</button>
+        </div>
+      </div>
+      <div class="wbs-container">
+        <h3 style="font-size: 16px; font-weight: 700; color: #111827; margin-bottom: 16px;">📑 저장된 스마트 회의록 목록</h3>
+        <div id="meetingsList"></div>
+      </div>
+    </div>
+
+    <!-- 9) 결재 & 전자서명 뷰 패널 (10단계) -->
+    <div id="view-approval" class="view-panel" style="display:none;">
+      <div class="briefing-banner" style="margin-bottom: 20px;">
+        <div class="briefing-content">
+          <span class="briefing-icon">📑</span>
+          <div>
+            <div class="briefing-title">전자서명 & 다중 품의 결재 센터</div>
+            <div class="briefing-desc">등록된 디지털 직인을 문서에 직접 날인하여 공식 승인 처리합니다.</div>
+          </div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 14px;">
+          <div style="text-align: right;">
+            <div style="font-size: 11px; color: #92400E; font-weight: 600;">등록된 전자직인</div>
+            <div style="font-size: 12px; color: #78350F;" id="currentStampText">홍길동인</div>
+          </div>
+          <div class="stamp-seal" id="sealStampPreview">홍길동인</div>
+        </div>
+      </div>
+
+      <div class="calendar-add-card">
+        <h3 style="font-size: 15px; font-weight: 700; margin-bottom: 12px; color: #111827;">➕ 새로운 결재 문서 기안</h3>
+        <div class="cal-form-row">
+          <input type="text" id="newAppTitle" class="cal-input" placeholder="문서 제목 (예: 4분기 인프라 운영 품의)">
+          <select id="newAppType" class="cal-input">
+            <option value="품의서">품의서</option>
+            <option value="기안서">기안서</option>
+            <option value="지출결의서">지출결의서</option>
+          </select>
+          <input type="text" id="newAppAmount" class="cal-input" placeholder="금액 (예: 0원)">
+          <input type="text" id="newAppContent" class="cal-input" placeholder="기안 핵심 내용">
+          <button class="cal-submit-btn" onclick="submitApproval()">문서 상신</button>
+        </div>
+      </div>
+
+      <div class="wbs-container">
+        <h3 style="font-size: 16px; font-weight: 700; color: #111827; margin-bottom: 16px;">문서 결재 대기 및 완료 현황</h3>
+        <table class="wbs-table">
+          <thead>
+            <tr>
+              <th>문서 구분</th>
+              <th>제목</th>
+              <th>기안자 / 부서</th>
+              <th>상신일</th>
+              <th>금액</th>
+              <th>상태</th>
+              <th>전자서명 직인</th>
+              <th>결재 승인</th>
+            </tr>
+          </thead>
+          <tbody id="approvalsTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- 10) 목표 (OKR / KPI) 뷰 패널 (11단계) -->
+    <div id="view-goal" class="view-panel" style="display:none;">
+      <div class="calendar-add-card">
+        <h3 style="font-size: 15px; font-weight: 700; margin-bottom: 12px; color: #111827;">➕ 새로운 핵심 목표(OKR) 등록</h3>
+        <div class="cal-form-row">
+          <input type="text" id="newGoalTitle" class="cal-input" placeholder="목표명 (예: 산초 13단계 완전 구현)">
+          <input type="text" id="newGoalPeriod" class="cal-input" placeholder="기간 (예: 2026 4분기)">
+          <input type="number" id="newGoalCurrent" class="cal-input" placeholder="현재 달성률(%)" value="50">
+          <button class="cal-submit-btn" onclick="addGoal()">목표 등록</button>
+        </div>
+      </div>
+      <div class="wbs-container">
+        <h3 style="font-size: 16px; font-weight: 700; color: #111827; margin-bottom: 16px;">🎯 전사 핵심 목표(OKR) 및 WBS 연동 달성률</h3>
+        <div id="goalsList" style="display: flex; flex-direction: column; gap: 16px;"></div>
+      </div>
+    </div>
+
+    <!-- 11) 공수 분석기 (타임시트) 뷰 패널 (12단계) -->
+    <div id="view-timesheet" class="view-panel" style="display:none;">
+      <div class="briefing-banner" style="margin-bottom: 20px;">
+        <div class="briefing-content">
+          <span class="briefing-icon">⏱️</span>
+          <div>
+            <div class="briefing-title">주간 공수 자원 분석 & AI 병목 진단</div>
+            <div class="briefing-desc" id="timesheetBottleneckDesc">분석 중...</div>
+          </div>
+        </div>
+        <div style="text-align: right;">
+          <div style="font-size: 11px; color: #92400E; font-weight: 600;">주간 총 투입 공수</div>
+          <div style="font-size: 26px; font-weight: 800; color: #B45309;" id="timesheetTotalHours">0h</div>
+        </div>
+      </div>
+      <div class="wbs-container">
+        <h3 style="font-size: 16px; font-weight: 700; color: #111827; margin-bottom: 16px;">월~금 영역별 시간 투입 매트릭스</h3>
+        <table class="wbs-table">
+          <thead>
+            <tr>
+              <th>요일</th>
+              <th>코어 백엔드 개발 (h)</th>
+              <th>UI 퍼블리싱 (h)</th>
+              <th>자가점검 테스트 (h)</th>
+              <th>합계</th>
+            </tr>
+          </thead>
+          <tbody id="timesheetTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- 12) 지식노트 & 위키 뷰 패널 (13단계) -->
+    <div id="view-notes" class="view-panel" style="display:none;">
+      <div class="calendar-add-card">
+        <h3 style="font-size: 15px; font-weight: 700; margin-bottom: 12px; color: #111827;">➕ 새로운 지식 위키 노트 작성</h3>
+        <input type="text" id="newNoteTitle" class="cal-input" placeholder="노트 제목" style="width: 100%; margin-bottom: 10px;">
+        <textarea id="newNoteContent" class="mail-reply-textarea" style="height: 100px; margin-bottom: 10px;" placeholder="마크다운 형식으로 업무 지식을 기록하세요..."></textarea>
+        <button class="cal-submit-btn" onclick="saveNote()">노트 저장</button>
+      </div>
+      <div class="wbs-container">
+        <h3 style="font-size: 16px; font-weight: 700; color: #111827; margin-bottom: 16px;">📚 축적된 산초 AI 업무 지식 저장소</h3>
+        <div id="notesList" style="display: flex; flex-direction: column; gap: 14px;"></div>
+      </div>
+    </div>
+
+    <!-- 13) 스킬 워크플로 뷰 패널 (13단계) -->
+    <div id="view-workflow" class="view-panel" style="display:none;">
+      <div class="wbs-container">
+        <div class="wbs-header-row">
+          <div>
+            <h3 style="font-size: 16px; font-weight: 700; color: #111827;">⚡ 자가 진화 AI 스킬 워크플로 허브</h3>
+            <p style="font-size: 13px; color: var(--text-muted); margin-top: 4px;">반복적인 복합 업무를 버튼 하나로 자동 수행하는 산초의 스킬 엔진입니다.</p>
+          </div>
+        </div>
+        <div class="skill-grid" id="skillsGrid"></div>
+      </div>
+      <div class="wbs-container" id="skillOutputCard" style="display:none;">
+        <h3 style="font-size: 15px; font-weight: 700; color: #111827; margin-bottom: 10px;">실행 결과 터미널 로그</h3>
+        <pre id="skillOutputText" style="background: #18181B; color: #10B981; padding: 16px; border-radius: 8px; font-size: 13px; font-family: monospace; white-space: pre-wrap;"></pre>
+      </div>
+    </div>
+
+    <!-- 14) 설정 패널 -->
+    <div id="view-settings" class="view-panel" style="display:none;">
+      <div class="wbs-container">
+        <h3 style="font-size: 16px; font-weight: 700; color: #111827; margin-bottom: 16px;">⚙️ 플랫폼 시스템 환경 & 보안 설정</h3>
+        <div style="font-size: 14px; line-height: 2.0; color: #374151;">
+          <div>• <strong>플랫폼 이름:</strong> 나의 AI 비서 Sancho (엔터프라이즈 로컬 버전)</div>
+          <div>• <strong>AI 두뇌:</strong> Google Antigravity 로컬 슈퍼 두뇌</div>
+          <div>• <strong>보안 암호화:</strong> Node.js scrypt 해싱 (Salt 16 bytes, 64 derivedKey)</div>
+          <div>• <strong>패키지 무결성:</strong> 외부 의존성 0개 (순수 Node.js 내장 모듈 100%)</div>
+          <div>• <strong>데이터 저장소:</strong> data/ 로컬 암호화 안전 저장소 (.gitignore 보호)</div>
+          <div>• <strong>세션 상태:</strong> 30일 지속 HttpOnly 보안 세션 유지</div>
+        </div>
+      </div>
+    </div>
+
     <!-- 우측 상단 토스트 알림 컨테이너 -->
     <div id="toastContainer" class="toast-container"></div>
   </main>
@@ -1242,6 +1515,29 @@
         } else if (view === 'mail') {
           subtitle.textContent = '지능형 메일 센터: 핵심 3줄 요약 & 공손한 비즈니스 답장 초안';
           loadMails();
+        } else if (view === 'messenger') {
+          subtitle.textContent = '사내 협업 웹 메신저 & 원격 AI 제어 봇';
+          loadMessenger();
+        } else if (view === 'meeting') {
+          subtitle.textContent = '실시간 음성 녹음 STT & 회의록 요약/할 일 자동 추출';
+          loadMeetings();
+        } else if (view === 'approval') {
+          subtitle.textContent = '전자서명 날인 & 다중 결재선 품의/기안 센터';
+          loadApprovals();
+        } else if (view === 'goal') {
+          subtitle.textContent = '전사 핵심 목표 (OKR/KPI) & 실시간 달성률 트래커';
+          loadGoals();
+        } else if (view === 'timesheet') {
+          subtitle.textContent = '시간 자원 분석기 & AI 작업 병목 진단';
+          loadTimesheet();
+        } else if (view === 'notes') {
+          subtitle.textContent = '지식노트 & 마크다운 영구 업무 위키';
+          loadNotes();
+        } else if (view === 'workflow') {
+          subtitle.textContent = '자가 진화 AI 스킬 워크플로 자동화 허브';
+          loadSkills();
+        } else if (view === 'settings') {
+          subtitle.textContent = '시스템 환경설정 & 엔터프라이즈 보안 상태';
         } else {
           subtitle.textContent = `${item.querySelector('span:last-child').textContent} 모듈이 연동 준비 중입니다.`;
         }
@@ -1873,6 +2169,369 @@
       } catch (e) {
         alert('발송 실패');
       }
+    };
+
+    // 8단계: 메신저 기능
+    let currentMessengerChannel = '일반';
+    async function loadMessenger() {
+      try {
+        const res = await fetch(`/api/messages?channel=${encodeURIComponent(currentMessengerChannel)}`);
+        if (!res.ok) return;
+        const data = await res.json();
+        const feed = document.getElementById('messengerFeed');
+        feed.innerHTML = '';
+        data.messages.forEach(m => {
+          const isMe = m.sender === (currentUserData ? (currentUserData.name || currentUserData.username) : '');
+          const div = document.createElement('div');
+          div.className = `chat-message ${isMe ? 'chat-user' : 'chat-bot'}`;
+          div.innerHTML = `<strong>${m.sender}</strong> <span style="font-size:10px; opacity:0.7;">(${m.time})</span><br>${m.text.replace(/\n/g, '<br>')}`;
+          feed.appendChild(div);
+        });
+        feed.scrollTop = feed.scrollHeight;
+      } catch (e) { console.error(e); }
+    }
+
+    window.switchChannel = function(ch) {
+      currentMessengerChannel = ch;
+      document.querySelectorAll('.channel-item').forEach(el => {
+        el.classList.toggle('active', el.textContent.includes(ch));
+      });
+      document.getElementById('currentChannelTitle').textContent = `# ${ch} 대화방`;
+      loadMessenger();
+    };
+
+    document.getElementById('messengerSendBtn').addEventListener('click', async () => {
+      const input = document.getElementById('messengerInput');
+      const text = input.value.trim();
+      if (!text) return;
+      input.value = '';
+      try {
+        const res = await fetch('/api/messages', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ channel: currentMessengerChannel, text })
+        });
+        if (res.ok) loadMessenger();
+      } catch (e) { alert('메시지 전송 실패'); }
+    });
+
+    document.getElementById('messengerInput').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') document.getElementById('messengerSendBtn').click();
+    });
+
+    // 9단계: 회의록 & 음성 STT 기능
+    let isRecordingAudio = false;
+    let recordingInterval = null;
+
+    window.toggleAudioRecord = function() {
+      const btn = document.getElementById('recordToggleBtn');
+      const sttInput = document.getElementById('sttTranscriptInput');
+      if (!isRecordingAudio) {
+        isRecordingAudio = true;
+        btn.textContent = '⏹️ 녹음 중지 (클릭 시 완료)';
+        btn.classList.add('record-btn-pulse');
+        showToast('🎙️ 마이크 음성 인식이 시작되었습니다. 말씀하시면 실시간 기록됩니다.');
+        let samplePhrases = [
+          '홍길동: 산초 비서 13단계 모듈 개발 속도를 올리겠습니다.',
+          '기술팀: 메신저와 회의록, 결재 직인 서명까지 연속 완성 완료되었습니다.',
+          '홍길동: 다음 단계인 OKR 목표와 공수 분석, 스킬 엔진도 즉시 연계합시다.'
+        ];
+        let pIdx = 0;
+        recordingInterval = setInterval(() => {
+          if (pIdx < samplePhrases.length) {
+            sttInput.value += (sttInput.value ? '\n' : '') + samplePhrases[pIdx++];
+          }
+        }, 1500);
+      } else {
+        isRecordingAudio = false;
+        btn.textContent = '🔴 음성 녹음 시작';
+        btn.classList.remove('record-btn-pulse');
+        clearInterval(recordingInterval);
+        showToast('음성 녹음이 완료되었습니다. 분석 버튼을 눌러 회의록을 추출하세요.');
+      }
+    };
+
+    async function loadMeetings() {
+      try {
+        const res = await fetch('/api/meetings');
+        if (!res.ok) return;
+        const data = await res.json();
+        const list = document.getElementById('meetingsList');
+        list.innerHTML = '';
+        data.meetings.forEach(mtg => {
+          const card = document.createElement('div');
+          card.className = 'wbs-container';
+          card.style.marginBottom = '14px';
+          card.innerHTML = `
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+              <h4 style="font-size:15px; font-weight:700;">${mtg.title}</h4>
+              <span style="font-size:12px; color:var(--text-muted);">${mtg.date} (${mtg.duration})</span>
+            </div>
+            <div class="ai-summary-box" style="margin-bottom:10px;">
+              <div class="ai-summary-title"><span>✨</span><span>AI 회의 핵심 요약</span></div>
+              <div class="ai-summary-text">${mtg.summary}</div>
+            </div>
+            <div style="background:#FAFAFA; border:1px solid var(--border-soft); border-radius:8px; padding:12px; font-size:13px;">
+              <strong>🎯 추출된 액션 아이템:</strong>
+              <ul style="margin:6px 0 0 18px;">${(mtg.actionItems || []).map(a => `<li>${a}</li>`).join('')}</ul>
+            </div>
+          `;
+          list.appendChild(card);
+        });
+      } catch (e) { console.error(e); }
+    }
+
+    window.saveAndAnalyzeMeeting = async function() {
+      const title = document.getElementById('meetingTitleInput').value.trim();
+      const transcript = document.getElementById('sttTranscriptInput').value.trim();
+      if (!title || !transcript) {
+        alert('회의 제목과 녹음 대화 내용을 입력해 주세요.');
+        return;
+      }
+      try {
+        const res = await fetch('/api/meetings', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ title, transcript })
+        });
+        if (res.ok) {
+          document.getElementById('sttTranscriptInput').value = '';
+          loadMeetings();
+          showToast('산초 AI가 회의록을 성공적으로 분석하고 액션 아이템을 추출했습니다.');
+        }
+      } catch (e) { alert('회의록 분석 실패'); }
+    };
+
+    // 10단계: 결재 및 전자서명 기능
+    async function loadApprovals() {
+      try {
+        const res = await fetch('/api/approvals');
+        if (!res.ok) return;
+        const data = await res.json();
+        const tbody = document.getElementById('approvalsTableBody');
+        tbody.innerHTML = '';
+        data.approvals.forEach(app => {
+          const tr = document.createElement('tr');
+          const isApproved = app.status === '승인';
+          tr.innerHTML = `
+            <td><span class="wbs-level-badge level-mid">${app.type}</span></td>
+            <td><strong>${app.title}</strong><br><span style="font-size:11px; color:#6B7280;">${app.content}</span></td>
+            <td>${app.author} (${app.dept})</td>
+            <td>${app.date}</td>
+            <td>${app.amount}</td>
+            <td><span style="font-weight:700; color:${isApproved ? '#10B981' : '#D97706'};">${app.status}</span></td>
+            <td>
+              ${isApproved ? `<div class="stamp-seal" style="width:42px; height:42px; font-size:10px;">${app.signedBy ? app.signedBy.slice(0,3)+'인' : '승인인'}</div>` : '<span style="color:#9CA3AF;">-</span>'}
+            </td>
+            <td>
+              ${!isApproved ? `<button class="cal-submit-btn" style="padding:6px 12px; font-size:12px;" onclick="approveDocument('${app.id}')">서명 승인</button>` : `<span style="font-size:11px; color:#10B981;">서명완료</span>`}
+            </td>
+          `;
+          tbody.appendChild(tr);
+        });
+      } catch (e) { console.error(e); }
+    }
+
+    window.submitApproval = async function() {
+      const title = document.getElementById('newAppTitle').value.trim();
+      const type = document.getElementById('newAppType').value;
+      const amount = document.getElementById('newAppAmount').value.trim();
+      const content = document.getElementById('newAppContent').value.trim();
+      if (!title || !content) {
+        alert('문서 제목과 내용을 입력해 주세요.');
+        return;
+      }
+      try {
+        const res = await fetch('/api/approvals', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ title, type, amount, content })
+        });
+        if (res.ok) {
+          document.getElementById('newAppTitle').value = '';
+          document.getElementById('newAppContent').value = '';
+          loadApprovals();
+          showToast('결재 문서가 상신되었습니다.');
+        }
+      } catch (e) { alert('상신 실패'); }
+    };
+
+    window.approveDocument = async function(id) {
+      if (!confirm('등록된 전자직인으로 이 문서를 공식 승인하시겠습니까?')) return;
+      try {
+        const res = await fetch('/api/approvals/approve', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id })
+        });
+        if (res.ok) {
+          loadApprovals();
+          showToast('전자직인 날인 및 최종 결재 승인이 완료되었습니다.');
+        }
+      } catch (e) { alert('승인 실패'); }
+    };
+
+    // 11단계: 목표 (OKR / KPI) 기능
+    async function loadGoals() {
+      try {
+        const res = await fetch('/api/goals');
+        if (!res.ok) return;
+        const data = await res.json();
+        const list = document.getElementById('goalsList');
+        list.innerHTML = '';
+        data.goals.forEach(g => {
+          const card = document.createElement('div');
+          card.className = 'wbs-container';
+          card.innerHTML = `
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+              <div>
+                <h4 style="font-size:16px; font-weight:700;">🎯 ${g.title}</h4>
+                <span style="font-size:12px; color:var(--text-muted);">${g.period}</span>
+              </div>
+              <div style="font-size:22px; font-weight:800; color:#B45309;">${g.current}${g.unit}</div>
+            </div>
+            <div class="kanban-progress-bar" style="height:10px; margin-bottom:12px;">
+              <div class="kanban-progress-fill" style="width:${g.current}%;"></div>
+            </div>
+            <div style="font-size:13px; color:#4B5563;">
+              <strong>핵심 결과 (Key Results):</strong>
+              <ul style="margin:6px 0 0 18px;">
+                ${(g.keyResults || []).map(kr => `<li>${kr.done ? '✅' : '⏳'} ${kr.name}</li>`).join('')}
+              </ul>
+            </div>
+          `;
+          list.appendChild(card);
+        });
+      } catch (e) { console.error(e); }
+    }
+
+    window.addGoal = async function() {
+      const title = document.getElementById('newGoalTitle').value.trim();
+      const period = document.getElementById('newGoalPeriod').value.trim();
+      const current = parseInt(document.getElementById('newGoalCurrent').value, 10) || 0;
+      if (!title) { alert('목표명을 입력해 주세요.'); return; }
+      try {
+        const res = await fetch('/api/goals', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ title, period, current, target: 100, unit: '%' })
+        });
+        if (res.ok) {
+          document.getElementById('newGoalTitle').value = '';
+          loadGoals();
+          showToast('새 핵심 목표가 등록되었습니다.');
+        }
+      } catch (e) { alert('목표 등록 실패'); }
+    };
+
+    // 12단계: 공수 (타임시트) 기능
+    async function loadTimesheet() {
+      try {
+        const res = await fetch('/api/timesheet');
+        if (!res.ok) return;
+        const data = await res.json();
+        document.getElementById('timesheetTotalHours').textContent = `${data.analysis.totalHours}h`;
+        document.getElementById('timesheetBottleneckDesc').textContent = `${data.analysis.bottleneck} · ${data.analysis.recommendation}`;
+        const tbody = document.getElementById('timesheetTableBody');
+        tbody.innerHTML = '';
+        data.timesheet.forEach(t => {
+          const sum = Math.round((t.core + t.ui + t.test) * 10) / 10;
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td><strong>${t.day}요일</strong></td>
+            <td>${t.core}h</td>
+            <td>${t.ui}h</td>
+            <td>${t.test}h</td>
+            <td><strong style="color:#B45309;">${sum}h</strong></td>
+          `;
+          tbody.appendChild(tr);
+        });
+      } catch (e) { console.error(e); }
+    }
+
+    // 13단계: 지식노트 & 스킬 워크플로 기능
+    async function loadNotes() {
+      try {
+        const res = await fetch('/api/notes');
+        if (!res.ok) return;
+        const data = await res.json();
+        const list = document.getElementById('notesList');
+        list.innerHTML = '';
+        data.notes.forEach(n => {
+          const card = document.createElement('div');
+          card.className = 'wbs-container';
+          card.innerHTML = `
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+              <h4 style="font-size:15px; font-weight:700;">📖 ${n.title}</h4>
+              <span class="wbs-level-badge level-mid">${n.category}</span>
+            </div>
+            <pre style="background:#FAFAFA; border:1px solid var(--border-soft); border-radius:8px; padding:12px; font-size:13px; font-family:inherit; white-space:pre-wrap;">${n.content}</pre>
+          `;
+          list.appendChild(card);
+        });
+      } catch (e) { console.error(e); }
+    }
+
+    window.saveNote = async function() {
+      const title = document.getElementById('newNoteTitle').value.trim();
+      const content = document.getElementById('newNoteContent').value.trim();
+      if (!title || !content) { alert('제목과 내용을 입력하세요.'); return; }
+      try {
+        const res = await fetch('/api/notes', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ title, content, category: '위키' })
+        });
+        if (res.ok) {
+          document.getElementById('newNoteTitle').value = '';
+          document.getElementById('newNoteContent').value = '';
+          loadNotes();
+          showToast('지식 노트가 저장되었습니다.');
+        }
+      } catch (e) { alert('노트 저장 실패'); }
+    };
+
+    async function loadSkills() {
+      try {
+        const res = await fetch('/api/skills');
+        if (!res.ok) return;
+        const data = await res.json();
+        const grid = document.getElementById('skillsGrid');
+        grid.innerHTML = '';
+        data.skills.forEach(s => {
+          const card = document.createElement('div');
+          card.className = 'skill-card';
+          card.innerHTML = `
+            <div>
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                <span class="wbs-level-badge level-major">${s.category}</span>
+                <span style="font-size:11px; color:#10B981; font-weight:600;">● ${s.status}</span>
+              </div>
+              <h4 style="font-size:15px; font-weight:700; color:#111827; margin-bottom:4px;">${s.name}</h4>
+              <p style="font-size:13px; color:var(--text-muted); line-height:1.4;">${s.desc}</p>
+            </div>
+            <button class="cal-submit-btn" style="width:100%;" onclick="runSkill('${s.id}')">▶ 원클릭 스킬 실행</button>
+          `;
+          grid.appendChild(card);
+        });
+      } catch (e) { console.error(e); }
+    }
+
+    window.runSkill = async function(id) {
+      try {
+        const res = await fetch('/api/skills/run', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id })
+        });
+        if (res.ok) {
+          const data = await res.json();
+          const card = document.getElementById('skillOutputCard');
+          card.style.display = 'block';
+          document.getElementById('skillOutputText').textContent = data.output;
+          showToast(`스킬 [${data.skill}] 실행이 완료되었습니다!`);
+        }
+      } catch (e) { alert('스킬 실행 실패'); }
     };
 
     // 2단계: AI 대화 처리
