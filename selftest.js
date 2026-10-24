@@ -228,6 +228,56 @@ async function runSelfTest() {
   assert(delPrjRes.status === 200, '프로젝트 삭제가 200이어야 합니다.');
   console.log('   ✓ 프로젝트 삭제 성공');
 
+  // 11. 5단계: WBS 계층 트리 및 간트차트 API (/api/wbs) 점검
+  console.log('11. 5단계: WBS 계층 트리 & 간트차트 (/api/wbs) 점검...');
+  const wbsGetRes = await request('/api/wbs', {
+    headers: { 'Cookie': sessionCookie }
+  });
+  assert(wbsGetRes.status === 200, 'WBS 조회가 200이어야 합니다.');
+  const wbsGetData = wbsGetRes.json();
+  assert(Array.isArray(wbsGetData.items), 'items 필드가 배열이어야 합니다.');
+  assert(typeof wbsGetData.overallProgress === 'number', 'overallProgress 필드가 숫자여야 합니다.');
+  assert(wbsGetData.items[0].children && wbsGetData.items[0].children.length > 0, '계층형 하위 항목이 존재해야 합니다.');
+  console.log(`   ✓ WBS 계층 트리 조회 성공 (전체 진척률: ${wbsGetData.overallProgress}%, 대분류: ${wbsGetData.items.length}개)`);
+
+  // WBS 하위 작업 신규 생성
+  const newWbsRes = await request('/api/wbs', {
+    method: 'POST',
+    headers: { 'Cookie': sessionCookie }
+  }, JSON.stringify({
+    name: '자가테스트 세부 일감',
+    parentId: wbsGetData.items[0].id,
+    start: '2026-10-24',
+    end: '2026-10-31',
+    progress: 50
+  }));
+  assert(newWbsRes.status === 200, 'WBS 작업 생성이 200이어야 합니다.');
+  const newWbsData = newWbsRes.json();
+  assert(newWbsData.success && newWbsData.item.id, 'WBS 항목에 고유 ID가 부여되어야 합니다.');
+  console.log(`   ✓ WBS 세부 일감 생성 성공 (ID: ${newWbsData.item.id}, 코드: ${newWbsData.item.code})`);
+
+  // WBS 진척률 수정 및 부모 진척률 자동 승격 점검
+  const patchWbsRes = await request('/api/wbs', {
+    method: 'PATCH',
+    headers: { 'Cookie': sessionCookie }
+  }, JSON.stringify({
+    id: newWbsData.item.id,
+    progress: 100,
+    status: '완료'
+  }));
+  assert(patchWbsRes.status === 200, 'WBS 진척률 수정이 200이어야 합니다.');
+  const patchWbsData = patchWbsRes.json();
+  assert(patchWbsData.item.progress === 100, '진척률이 100%로 수정되어야 합니다.');
+  console.log('   ✓ WBS 작업 진척률 100% 수정 및 부모 진척률 자동 승격 확인');
+
+  // WBS 작업 삭제
+  const delWbsRes = await request(`/api/wbs?id=${newWbsData.item.id}`, {
+    method: 'DELETE',
+    headers: { 'Cookie': sessionCookie }
+  });
+  assert(delWbsRes.status === 200, 'WBS 삭제가 200이어야 합니다.');
+  console.log('   ✓ WBS 일감 삭제 성공');
+
   console.log('--- 모든 자가 점검(selftest) 100% 통과 완료! ---');
 }
 

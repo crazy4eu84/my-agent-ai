@@ -592,6 +592,102 @@
       background: #E5E7EB;
       color: #111827;
     }
+
+    /* 5단계: MS Project급 WBS 계층 트리 및 간트차트 스타일 */
+    .wbs-container {
+      background: #FFFFFF;
+      border: 1px solid var(--border-soft);
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02);
+      margin-bottom: 24px;
+    }
+    .wbs-header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    .wbs-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+    .wbs-table th {
+      background: #F9FAFB;
+      color: #4B5563;
+      font-weight: 600;
+      text-align: left;
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--border-soft);
+    }
+    .wbs-table td {
+      padding: 12px 14px;
+      border-bottom: 1px solid #F3F4F6;
+      color: #1F2937;
+    }
+    .wbs-table tr:hover {
+      background: #FFFDF9;
+    }
+    .wbs-row-parent {
+      font-weight: 700;
+      background: #FAFAFA;
+    }
+    .wbs-level-badge {
+      font-size: 11px;
+      font-weight: 600;
+      padding: 2px 6px;
+      border-radius: 4px;
+      display: inline-block;
+    }
+    .level-major { background: #FEF3C7; color: #B45309; }
+    .level-mid { background: #E0E7FF; color: #3730A3; }
+    .level-sub { background: #F3F4F6; color: #4B5563; }
+    
+    .gantt-section {
+      background: #FFFFFF;
+      border: 1px solid var(--border-soft);
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02);
+      overflow-x: auto;
+    }
+    .gantt-item-row {
+      display: grid;
+      grid-template-columns: 200px 1fr;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 12px;
+    }
+    .gantt-track {
+      position: relative;
+      height: 28px;
+      background: #F3F4F6;
+      border-radius: 6px;
+    }
+    .gantt-bar {
+      position: absolute;
+      top: 3px;
+      bottom: 3px;
+      background: var(--amber-warm);
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      padding: 0 10px;
+      font-size: 11px;
+      color: #FFFFFF;
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      transition: width 0.3s ease;
+    }
+    .gantt-bar-done {
+      background: #10B981 !important;
+    }
+    .gantt-bar-overdue {
+      background: #EF4444 !important;
+    }
   </style>
 </head>
 <body>
@@ -769,6 +865,68 @@
         </div>
       </div>
     </div>
+
+    <!-- 4) WBS 계층 트리 및 간트차트 뷰 패널 (5단계) -->
+    <div id="view-wbs" class="view-panel" style="display:none;">
+      <!-- 상단 요약 바 -->
+      <div class="briefing-banner" style="margin-bottom: 20px;">
+        <div class="briefing-content">
+          <span class="briefing-icon">📊</span>
+          <div>
+            <div class="briefing-title">MS Project급 WBS 계층 간트차트 엔진</div>
+            <div class="briefing-desc">하위 작업의 진행 상태가 상위 프로젝트 진척률로 자동 승격 계산됩니다.</div>
+          </div>
+        </div>
+        <div style="text-align: right;">
+          <div style="font-size: 11px; color: #92400E; font-weight: 600;">전체 프로젝트 종합 진척률</div>
+          <div style="font-size: 26px; font-weight: 800; color: #B45309;" id="wbsOverallProgressLabel">0%</div>
+        </div>
+      </div>
+
+      <!-- 신규 작업 등록 카드 -->
+      <div class="calendar-add-card">
+        <h3 style="font-size: 15px; font-weight: 700; margin-bottom: 12px; color: #111827;">➕ 새로운 WBS 작업 등록</h3>
+        <div class="cal-form-row">
+          <input type="text" id="newWbsName" class="cal-input" placeholder="작업명 (예: API 연동 테스트)">
+          <select id="newWbsParent" class="cal-input">
+            <option value="">(최상위 대분류)</option>
+          </select>
+          <input type="date" id="newWbsStart" class="cal-input">
+          <input type="date" id="newWbsEnd" class="cal-input">
+          <input type="number" id="newWbsProgress" class="cal-input" placeholder="진척률(%)" value="0" min="0" max="100">
+          <button id="addWbsBtn" class="cal-submit-btn">작업 추가</button>
+        </div>
+      </div>
+
+      <!-- 1. 계층형 트리 테이블 -->
+      <div class="wbs-container">
+        <div class="wbs-header-row">
+          <h3 style="font-size: 16px; font-weight: 700; color: #111827;">계층형 WBS 업무 분업 구조도</h3>
+          <span style="font-size: 13px; color: var(--text-muted);" id="wbsTaskCountLabel">총 0개 세부 작업</span>
+        </div>
+        <table class="wbs-table">
+          <thead>
+            <tr>
+              <th style="width: 80px;">WBS 코드</th>
+              <th style="width: 60px;">구분</th>
+              <th>작업명</th>
+              <th style="width: 110px;">시작일</th>
+              <th style="width: 110px;">종료일</th>
+              <th style="width: 140px;">진척률</th>
+              <th style="width: 80px;">상태</th>
+              <th style="width: 100px;">관리</th>
+            </tr>
+          </thead>
+          <tbody id="wbsTableBody"></tbody>
+        </table>
+      </div>
+
+      <!-- 2. 인터랙티브 간트차트 타임라인 -->
+      <div class="gantt-section">
+        <h3 style="font-size: 16px; font-weight: 700; color: #111827; margin-bottom: 16px;">📅 인터랙티브 간트차트 (Gantt Chart Timeline)</h3>
+        <div id="ganttTrackList"></div>
+      </div>
+    </div>
   </main>
 
   <script>
@@ -819,6 +977,9 @@
         } else if (view === 'project') {
           subtitle.textContent = '프로젝트 허브: 기획부터 완료까지 한눈에 파악하는 칸반 보드';
           loadProjects();
+        } else if (view === 'wbs') {
+          subtitle.textContent = 'MS Project급 WBS 계층 트리 및 인터랙티브 간트차트 엔진';
+          loadWBS();
         } else {
           subtitle.textContent = `${item.querySelector('span:last-child').textContent} 모듈이 연동 준비 중입니다.`;
         }
@@ -1049,6 +1210,175 @@
         alert('서버 통신 오류');
       }
     });
+
+    // 5단계: WBS 계층 트리 & 간트차트 데이터 로드 및 렌더링
+    async function loadWBS() {
+      try {
+        const res = await fetch('/api/wbs');
+        if (!res.ok) return;
+        const data = await res.json();
+        const { items, overallProgress } = data;
+
+        document.getElementById('wbsOverallProgressLabel').textContent = `${overallProgress}%`;
+
+        const parentSel = document.getElementById('newWbsParent');
+        parentSel.innerHTML = '<option value="">(최상위 대분류)</option>';
+        items.forEach(p => {
+          parentSel.innerHTML += `<option value="${p.id}">[${p.code}] ${p.name}</option>`;
+        });
+
+        const tbody = document.getElementById('wbsTableBody');
+        tbody.innerHTML = '';
+        let totalTaskCount = 0;
+
+        let allDates = [];
+        items.forEach(p => {
+          if (p.start) allDates.push(new Date(p.start).getTime());
+          if (p.end) allDates.push(new Date(p.end).getTime());
+          if (p.children) {
+            p.children.forEach(c => {
+              if (c.start) allDates.push(new Date(c.start).getTime());
+              if (c.end) allDates.push(new Date(c.end).getTime());
+            });
+          }
+        });
+
+        const minTime = allDates.length ? Math.min(...allDates) : Date.now();
+        const maxTime = allDates.length ? Math.max(...allDates) : Date.now() + 30 * 24 * 60 * 60 * 1000;
+        const totalSpan = Math.max(maxTime - minTime, 24 * 60 * 60 * 1000);
+
+        const ganttList = document.getElementById('ganttTrackList');
+        ganttList.innerHTML = '';
+
+        function renderRow(task, isChild = false, parentId = null) {
+          totalTaskCount++;
+          const tr = document.createElement('tr');
+          if (!isChild) tr.className = 'wbs-row-parent';
+
+          const levelClass = task.level === '대' ? 'level-major' : (task.level === '중' ? 'level-mid' : 'level-sub');
+          tr.innerHTML = `
+            <td><strong>${task.code}</strong></td>
+            <td><span class="wbs-level-badge ${levelClass}">${task.level || (isChild ? '중' : '대')}</span></td>
+            <td style="${isChild ? 'padding-left: 28px;' : ''}">${isChild ? '↳ ' : ''}${task.name}</td>
+            <td>${task.start || '-'}</td>
+            <td>${task.end || '-'}</td>
+            <td>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <div class="kanban-progress-bar" style="flex: 1; margin: 0;">
+                  <div class="kanban-progress-fill" style="width: ${task.progress || 0}%;"></div>
+                </div>
+                <span style="font-size: 11px; font-weight: 600; width: 32px;">${task.progress || 0}%</span>
+              </div>
+            </td>
+            <td><span style="font-size: 12px; font-weight: 600; color: ${task.status === '완료' ? '#10B981' : '#D97706'};">${task.status || '진행중'}</span></td>
+            <td>
+              <div style="display: flex; gap: 4px;">
+                <button class="btn-move" onclick="promptUpdateWBS('${task.id}', ${task.progress || 0})">수정</button>
+                <button class="event-delete-btn" onclick="deleteWBSTask('${task.id}')">삭제</button>
+              </div>
+            </td>
+          `;
+          tbody.appendChild(tr);
+
+          const sTime = task.start ? new Date(task.start).getTime() : minTime;
+          const eTime = task.end ? new Date(task.end).getTime() : sTime + 86400000;
+          const leftPercent = Math.max(0, Math.min(100, ((sTime - minTime) / totalSpan) * 100));
+          const widthPercent = Math.max(4, Math.min(100 - leftPercent, ((eTime - sTime) / totalSpan) * 100));
+
+          const isOverdue = new Date() > new Date(task.end) && (task.progress || 0) < 100;
+          const isDone = (task.progress || 0) === 100;
+          const barClass = isDone ? 'gantt-bar-done' : (isOverdue ? 'gantt-bar-overdue' : '');
+
+          const gRow = document.createElement('div');
+          gRow.className = 'gantt-item-row';
+          gRow.innerHTML = `
+            <div style="font-size: 12px; font-weight: ${isChild ? '400' : '700'}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; ${isChild ? 'padding-left: 16px;' : ''}">
+              ${task.code} ${task.name}
+            </div>
+            <div class="gantt-track">
+              <div class="gantt-bar ${barClass}" style="left: ${leftPercent.toFixed(1)}%; width: ${widthPercent.toFixed(1)}%;">
+                ${task.progress || 0}% (${task.start} ~ ${task.end})
+              </div>
+            </div>
+          `;
+          ganttList.appendChild(gRow);
+        }
+
+        items.forEach(parent => {
+          renderRow(parent, false);
+          if (parent.children && parent.children.length > 0) {
+            parent.children.forEach(child => renderRow(child, true, parent.id));
+          }
+        });
+
+        document.getElementById('wbsTaskCountLabel').textContent = `총 ${totalTaskCount}개 세부 작업`;
+      } catch (err) {
+        console.error('WBS 로드 실패:', err);
+      }
+    }
+
+    window.promptUpdateWBS = async function(id, currentProgress) {
+      const pStr = prompt('수정할 진척률(0~100)을 입력하세요:', currentProgress);
+      if (pStr === null) return;
+      const progress = parseInt(pStr, 10);
+      if (isNaN(progress) || progress < 0 || progress > 100) {
+        alert('0에서 100 사이의 숫자를 입력해 주세요.');
+        return;
+      }
+      try {
+        const res = await fetch('/api/wbs', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id, progress, status: progress === 100 ? '완료' : '진행중' })
+        });
+        if (res.ok) loadWBS();
+      } catch (e) {
+        alert('진척률 수정 실패');
+      }
+    };
+
+    window.deleteWBSTask = async function(id) {
+      if (!confirm('이 WBS 작업을 삭제하시겠습니까? (하위 작업도 함께 삭제됩니다)')) return;
+      try {
+        const res = await fetch(`/api/wbs?id=${encodeURIComponent(id)}`, { method: 'DELETE' });
+        if (res.ok) loadWBS();
+      } catch (e) {
+        alert('삭제 실패');
+      }
+    };
+
+    document.getElementById('addWbsBtn').addEventListener('click', async () => {
+      const name = document.getElementById('newWbsName').value.trim();
+      const parentId = document.getElementById('newWbsParent').value;
+      const start = document.getElementById('newWbsStart').value;
+      const end = document.getElementById('newWbsEnd').value;
+      const progress = parseInt(document.getElementById('newWbsProgress').value, 10) || 0;
+
+      if (!name) {
+        alert('작업명을 입력해 주세요.');
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/wbs', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, parentId, start, end, progress, level: parentId ? '중' : '대' })
+        });
+        if (res.ok) {
+          document.getElementById('newWbsName').value = '';
+          loadWBS();
+        } else {
+          const errData = await res.json();
+          alert(errData.error || 'WBS 추가 실패');
+        }
+      } catch (e) {
+        alert('서버 통신 오류');
+      }
+    });
+
+    document.getElementById('newWbsStart').value = new Date().toISOString().slice(0, 10);
+    document.getElementById('newWbsEnd').value = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
 
     // 2단계: AI 대화 처리
     const chatBox = document.getElementById('chatBox');

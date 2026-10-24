@@ -11,6 +11,7 @@ const USERS_FILE = path.join(DATA_DIR, 'users.json');
 const SESSIONS_FILE = path.join(DATA_DIR, 'sessions.json');
 const CALENDAR_FILE = path.join(DATA_DIR, 'calendar.json');
 const PROJECTS_FILE = path.join(DATA_DIR, 'projects.json');
+const WBS_FILE = path.join(DATA_DIR, 'wbs.json');
 const PUBLIC_DIR = path.join(__dirname, 'public');
 
 if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
@@ -92,6 +93,88 @@ function getProjects() {
     }
   ];
   return readJSON(PROJECTS_FILE, defaultProjects);
+}
+
+function getWBS() {
+  const defaultWBS = [
+    {
+      id: 'wbs_1',
+      code: '1.0',
+      name: '플랫폼 코어 및 보안 엔진 구축',
+      level: '대',
+      start: '2026-10-01',
+      end: '2026-10-15',
+      progress: 100,
+      assignee: '홍길동',
+      status: '완료',
+      children: [
+        {
+          id: 'wbs_1_1',
+          code: '1.1',
+          name: 'HTTP 코어 서버 및 scrypt 보안 해싱',
+          level: '중',
+          start: '2026-10-01',
+          end: '2026-10-08',
+          progress: 100,
+          status: '완료'
+        },
+        {
+          id: 'wbs_1_2',
+          code: '1.2',
+          name: '다중 세션 관리 및 무차별 대입 방어',
+          level: '중',
+          start: '2026-10-08',
+          end: '2026-10-15',
+          progress: 100,
+          status: '완료'
+        }
+      ]
+    },
+    {
+      id: 'wbs_2',
+      code: '2.0',
+      name: '비서 지능 모듈 및 UI 개발',
+      level: '대',
+      start: '2026-10-16',
+      end: '2026-11-10',
+      progress: 70,
+      assignee: '홍길동',
+      status: '진행중',
+      children: [
+        {
+          id: 'wbs_2_1',
+          code: '2.1',
+          name: '대시보드 출근 브리핑 및 AI 실시간 대화',
+          level: '중',
+          start: '2026-10-16',
+          end: '2026-10-22',
+          progress: 100,
+          status: '완료'
+        },
+        {
+          id: 'wbs_2_2',
+          code: '2.2',
+          name: '스마트 캘린더 및 프로젝트 칸반 허브',
+          level: '중',
+          start: '2026-10-23',
+          end: '2026-10-28',
+          progress: 100,
+          status: '완료'
+        },
+        {
+          id: 'wbs_2_3',
+          code: '2.3',
+          name: 'MS Project급 WBS 계층 트리 및 간트차트 엔진',
+          level: '중',
+          start: '2026-10-29',
+          end: '2026-11-10',
+          progress: 30,
+          status: '진행중'
+        }
+      ]
+    }
+  ];
+  return readJSON(WBS_FILE, defaultWBS);
 }
 
 function hashPassword(password) {
@@ -433,6 +516,105 @@ const server = http.createServer(async (req, res) => {
       let projects = getProjects();
       projects = projects.filter(p => p.id !== id);
       writeJSON(PROJECTS_FILE, projects);
+      return sendJSON(200, { success: true });
+    }
+
+    // 5단계: MS Project급 WBS 계층 트리 및 간트차트 API
+    if (pathname === '/api/wbs' && req.method === 'GET') {
+      const items = getWBS();
+      let totalWeighted = 0;
+      items.forEach(parent => {
+        if (parent.children && parent.children.length > 0) {
+          const sum = parent.children.reduce((acc, c) => acc + (c.progress || 0), 0);
+          parent.progress = Math.round(sum / parent.children.length);
+          parent.status = parent.progress === 100 ? '완료' : (parent.progress > 0 ? '진행중' : '대기');
+        }
+        totalWeighted += (parent.progress || 0);
+      });
+      const overallProgress = items.length > 0 ? Math.round(totalWeighted / items.length) : 0;
+      return sendJSON(200, { items, overallProgress });
+    }
+
+    if (pathname === '/api/wbs' && req.method === 'POST') {
+      const { name, level, start, end, progress, status, parentId, assignee } = await readBody();
+      if (!name) {
+        return sendJSON(400, { error: '작업명을 입력해 주세요.' });
+      }
+      const items = getWBS();
+      const newItem = {
+        id: 'wbs_' + Date.now(),
+        code: '',
+        name,
+        level: level || '중',
+        start: start || new Date().toISOString().slice(0, 10),
+        end: end || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
+        progress: typeof progress === 'number' ? progress : 0,
+        status: status || '진행중',
+        assignee: assignee || currentUser.name || currentUser.username,
+        children: []
+      };
+
+      if (parentId) {
+        const parent = items.find(p => p.id === parentId);
+        if (parent) {
+          if (!parent.children) parent.children = [];
+          newItem.code = `${parent.code}.${parent.children.length + 1}`;
+          parent.children.push(newItem);
+        } else {
+          newItem.code = `${items.length + 1}.0`;
+          items.push(newItem);
+        }
+      } else {
+        newItem.code = `${items.length + 1}.0`;
+        items.push(newItem);
+      }
+
+      writeJSON(WBS_FILE, items);
+      return sendJSON(200, { success: true, item: newItem });
+    }
+
+    if (pathname === '/api/wbs' && req.method === 'PATCH') {
+      const { id, progress, status, start, end } = await readBody();
+      if (!id) return sendJSON(400, { error: '작업 ID가 필요합니다.' });
+      const items = getWBS();
+      let found = null;
+
+      for (const p of items) {
+        if (p.id === id) { found = p; break; }
+        if (p.children) {
+          const c = p.children.find(ch => ch.id === id);
+          if (c) { found = c; break; }
+        }
+      }
+
+      if (!found) return sendJSON(404, { error: '작업을 찾을 수 없습니다.' });
+      if (typeof progress === 'number') found.progress = progress;
+      if (status) found.status = status;
+      if (start) found.start = start;
+      if (end) found.end = end;
+
+      // 부모 진척률 자동 승격
+      items.forEach(parent => {
+        if (parent.children && parent.children.length > 0) {
+          const sum = parent.children.reduce((acc, c) => acc + (c.progress || 0), 0);
+          parent.progress = Math.round(sum / parent.children.length);
+          parent.status = parent.progress === 100 ? '완료' : (parent.progress > 0 ? '진행중' : '대기');
+        }
+      });
+
+      writeJSON(WBS_FILE, items);
+      return sendJSON(200, { success: true, item: found });
+    }
+
+    if (pathname === '/api/wbs' && req.method === 'DELETE') {
+      const id = url.searchParams.get('id');
+      if (!id) return sendJSON(400, { error: '삭제할 작업 ID가 필요합니다.' });
+      let items = getWBS();
+      items = items.filter(p => p.id !== id);
+      items.forEach(p => {
+        if (p.children) p.children = p.children.filter(c => c.id !== id);
+      });
+      writeJSON(WBS_FILE, items);
       return sendJSON(200, { success: true });
     }
 
