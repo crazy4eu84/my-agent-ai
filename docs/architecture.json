@@ -2,29 +2,45 @@
   "schema_version": 1,
   "diagram_type": "architecture",
   "meta": {
-    "title": "산초(Sancho) AI 비서 전체 구조도",
-    "subtitle": "브라우저 → server.js → Claude Code → data/ 데이터 흐름",
+    "title": "산초(Sancho) AI 비서 13단계 통합 구조도",
+    "subtitle": "13개 업무 메뉴 ↔ server.js ↔ 로컬 AI 두뇌(Claude Code) ↔ data/ 저장소 연동 흐름",
     "output": "architecture.html",
     "quality_profile": "standard"
   },
   "components": [
-    { "id": "browser", "type": "frontend", "label": "웹 브라우저", "sublabel": "로그인 · 13개 메뉴 · 채팅", "pos": [40, 240], "size": [150, 75] },
-    { "id": "server", "type": "backend", "label": "server.js", "sublabel": "로그인 · 화면 · 저장소 · 예약", "pos": [320, 240], "size": [170, 75] },
-    { "id": "brain", "type": "external", "label": "Claude Code", "sublabel": "PC 로컬 AI 두뇌 (무과금)", "pos": [610, 240], "size": [170, 75] },
-    { "id": "data_dir", "type": "database", "label": "data/ 폴더", "sublabel": "기억 · 예약 · 업무 데이터", "pos": [460, 50], "size": [190, 70] }
+    { "id": "menu_daily", "type": "frontend", "label": "일일 업무 화면", "sublabel": "대시보드 · 일정 · 예약알림", "pos": [40, 60], "size": [170, 75] },
+    { "id": "menu_task", "type": "frontend", "label": "프로젝트/관리 화면", "sublabel": "프로젝트 · WBS · 목표 · 공수", "pos": [40, 180], "size": [170, 75] },
+    { "id": "menu_comm", "type": "frontend", "label": "소통/문서 화면", "sublabel": "메일 · 메신저 · 회의록 · 결재", "pos": [40, 300], "size": [170, 75] },
+    { "id": "menu_auto", "type": "frontend", "label": "지식/자동화 화면", "sublabel": "지식노트 · 워크플로 · 설정", "pos": [40, 420], "size": [170, 75] },
+
+    { "id": "server", "type": "backend", "label": "server.js 코어", "sublabel": "로그인 · 화면렌더링 · 예약스케줄러", "pos": [310, 240], "size": [180, 80] },
+    { "id": "guard", "type": "security", "label": "3대 안전장치", "sublabel": "삭제확인 · 발송차단 · 로컬격리", "pos": [310, 390], "size": [180, 65] },
+
+    { "id": "brain", "type": "external", "label": "Claude Code 두뇌", "sublabel": "PC 로컬 구독 프로세스 (비용 0원)", "pos": [610, 240], "size": [180, 80] },
+
+    { "id": "data_json", "type": "database", "label": "data/*.json", "sublabel": "일정 · WBS · 목표 · 설정", "pos": [610, 70], "size": [180, 70] },
+    { "id": "data_md", "type": "database", "label": "data/notes/ & 기억", "sublabel": "회의록 · 지식노트 · AI 장기기억", "pos": [610, 410], "size": [180, 70] }
   ],
   "boundaries": [
-    { "kind": "region", "label": "내 컴퓨터(PC) 로컬 환경 (외부 유출 원천 차단)", "wraps": ["server", "brain", "data_dir"] }
+    { "kind": "region", "label": "사용자 브라우저 UI (13개 업무 메뉴)", "wraps": ["menu_daily", "menu_task", "menu_comm", "menu_auto"] },
+    { "kind": "region", "label": "내 컴퓨터 로컬 PC 환경 (외부 패키지 0개 / 외부 유출 원천 차단)", "wraps": ["server", "guard", "brain", "data_json", "data_md"] }
   ],
   "connections": [
-    { "id": "c1", "from": "browser", "to": "server", "label": "사용자 요청 / 화면 렌더링", "labelDy": -45 },
-    { "id": "c2", "from": "server", "to": "brain", "label": "AI 명령 전달 / 응답 수신", "variant": "emphasis", "labelDy": -45 },
-    { "id": "c3", "from": "server", "to": "data_dir", "label": "데이터 저장 및 조회", "fromSide": "top", "toSide": "bottom", "labelDx": -40 },
-    { "id": "c4", "from": "brain", "to": "data_dir", "label": "기억 및 업무 데이터 참조", "fromSide": "top", "toSide": "right", "variant": "dashed", "labelDy": -35 }
+    { "id": "c_daily", "from": "menu_daily", "to": "server", "label": "일정/알림 요청", "fromSide": "right", "toSide": "top" },
+    { "id": "c_task", "from": "menu_task", "to": "server", "label": "WBS/진척도 갱신", "fromSide": "right", "toSide": "left", "labelDy": -20 },
+    { "id": "c_comm", "from": "menu_comm", "to": "server", "label": "초안작성/요약", "fromSide": "right", "toSide": "left", "labelDy": 20 },
+    { "id": "c_auto", "from": "menu_auto", "to": "server", "label": "워크플로 실행", "fromSide": "right", "toSide": "bottom" },
+
+    { "id": "c_guard", "from": "server", "to": "guard", "label": "안전 정책 필터", "variant": "security", "fromSide": "bottom", "toSide": "top", "labelDy": 20 },
+    { "id": "c_brain", "from": "server", "to": "brain", "label": "명령 전달 / 답변 수신", "variant": "emphasis", "labelDy": -45 },
+
+    { "id": "c_json", "from": "server", "to": "data_json", "label": "JSON 입출력", "fromSide": "top", "toSide": "left" },
+    { "id": "c_brain_mem", "from": "brain", "to": "data_md", "label": "과거 기억/노트 참조", "fromSide": "bottom", "toSide": "top", "variant": "dashed", "labelDy": 25 },
+    { "id": "c_brain_json", "from": "brain", "to": "data_json", "label": "업무 맥락 분석", "fromSide": "top", "toSide": "bottom", "variant": "dashed", "labelDy": -25 }
   ],
   "cards": [
-    { "dot": "emerald", "title": "순수 Node.js 아키텍처", "items": ["외부 패키지 0개로 가볍고 안전한 server.js", "로그인, 화면 렌더링, 파일 저장소, 예약 스케줄러 내장"] },
-    { "dot": "cyan", "title": "로컬 Claude Code 두뇌", "items": ["기존 PC 구독 환경 그대로 활용 (API 비용 0원)", "data/ 폴더의 지난 기억과 업무 데이터를 직접 참조"] },
-    { "dot": "rose", "title": "안전한 로컬 파일 관리", "items": ["data/ 폴더는 .gitignore 처리되어 외부 노출 차단", "DB 서버 설치 없이 JSON 및 Markdown으로 영구 보관"] }
+    { "dot": "emerald", "title": "13개 메뉴 유기적 통합", "items": ["회의록에서 할 일 추출 → WBS 및 일정 자동 반영", "WBS 진척도에 따라 목표(OKR) 달성률 자동 계산", "오늘의 모든 현황을 대시보드에서 AI가 한눈에 브리핑"] },
+    { "dot": "cyan", "title": "PC 로컬 AI 두뇌 직결", "items": ["별도 유료 API 결제 없이 기존 로그인된 Claude Code 사용", "child_process로 표준 입출력 제어 (추가 패키지 0개)", "data/ 폴더의 마크다운 기억을 읽어 나만의 비서로 동작"] },
+    { "dot": "rose", "title": "엄격한 3대 안전장치", "items": ["파일 삭제는 반드시 확인 팝업을 거쳐 사용자 승인 필요", "작성된 메일은 AI가 단독 발송 불가 (수동 발송 원칙)", "모든 데이터는 data/에만 보관되며 외부 유출 원천 차단"] }
   ]
 }
