@@ -21,3 +21,6 @@ logs/
 Thumbs.db
 .vscode/
 .idea/
+
+# Archify 시각 검증 임시 파일
+docs/*.visual-check.*

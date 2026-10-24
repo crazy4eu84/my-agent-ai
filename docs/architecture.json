@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "산초(Sancho) AI 비서 전체 구조도",
+    "subtitle": "브라우저 → server.js → Claude Code → data/ 데이터 흐름",
+    "output": "architecture.html",
+    "quality_profile": "standard"
+  },
+  "components": [
+    { "id": "browser", "type": "frontend", "label": "웹 브라우저", "sublabel": "로그인 · 13개 메뉴 · 채팅", "pos": [40, 240], "size": [150, 75] },
+    { "id": "server", "type": "backend", "label": "server.js", "sublabel": "로그인 · 화면 · 저장소 · 예약", "pos": [320, 240], "size": [170, 75] },
+    { "id": "brain", "type": "external", "label": "Claude Code", "sublabel": "PC 로컬 AI 두뇌 (무과금)", "pos": [610, 240], "size": [170, 75] },
+    { "id": "data_dir", "type": "database", "label": "data/ 폴더", "sublabel": "기억 · 예약 · 업무 데이터", "pos": [460, 50], "size": [190, 70] }
+  ],
+  "boundaries": [
+    { "kind": "region", "label": "내 컴퓨터(PC) 로컬 환경 (외부 유출 원천 차단)", "wraps": ["server", "brain", "data_dir"] }
+  ],
+  "connections": [
+    { "id": "c1", "from": "browser", "to": "server", "label": "사용자 요청 / 화면 렌더링", "labelDy": -45 },
+    { "id": "c2", "from": "server", "to": "brain", "label": "AI 명령 전달 / 응답 수신", "variant": "emphasis", "labelDy": -45 },
+    { "id": "c3", "from": "server", "to": "data_dir", "label": "데이터 저장 및 조회", "fromSide": "top", "toSide": "bottom", "labelDx": -40 },
+    { "id": "c4", "from": "brain", "to": "data_dir", "label": "기억 및 업무 데이터 참조", "fromSide": "top", "toSide": "right", "variant": "dashed", "labelDy": -35 }
+  ],
+  "cards": [
+    { "dot": "emerald", "title": "순수 Node.js 아키텍처", "items": ["외부 패키지 0개로 가볍고 안전한 server.js", "로그인, 화면 렌더링, 파일 저장소, 예약 스케줄러 내장"] },
+    { "dot": "cyan", "title": "로컬 Claude Code 두뇌", "items": ["기존 PC 구독 환경 그대로 활용 (API 비용 0원)", "data/ 폴더의 지난 기억과 업무 데이터를 직접 참조"] },
+    { "dot": "rose", "title": "안전한 로컬 파일 관리", "items": ["data/ 폴더는 .gitignore 처리되어 외부 노출 차단", "DB 서버 설치 없이 JSON 및 Markdown으로 영구 보관"] }
+  ]
+}
