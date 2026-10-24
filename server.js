@@ -10,6 +10,7 @@ const DATA_DIR = path.join(__dirname, 'data');
 const USERS_FILE = path.join(DATA_DIR, 'users.json');
 const SESSIONS_FILE = path.join(DATA_DIR, 'sessions.json');
 const CALENDAR_FILE = path.join(DATA_DIR, 'calendar.json');
+const PROJECTS_FILE = path.join(DATA_DIR, 'projects.json');
 const PUBLIC_DIR = path.join(__dirname, 'public');
 
 if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
@@ -58,6 +59,39 @@ function getCalendarEvents() {
     }
   ];
   return readJSON(CALENDAR_FILE, defaultEvents);
+}
+
+function getProjects() {
+  const defaultProjects = [
+    {
+      id: 'prj_1',
+      title: '산초 AI 비서 엔터프라이즈 플랫폼 구축',
+      status: '진행중',
+      leader: '홍길동',
+      period: '2026.10 - 2026.11',
+      progress: 75,
+      desc: 'Antigravity 두뇌 기반 로컬 AI 비서 및 13개 업무 모듈 개발'
+    },
+    {
+      id: 'prj_2',
+      title: '사내 보안 메신저 & 결재 연동 시스템',
+      status: '기획',
+      leader: '홍길동',
+      period: '2026.11 - 2026.12',
+      progress: 20,
+      desc: '전자서명 직인 날인 및 외부 메신저 웹훅 연계'
+    },
+    {
+      id: 'prj_3',
+      title: '3분기 인프라 최적화 및 보안 점검',
+      status: '완료',
+      leader: '홍길동',
+      period: '2026.08 - 2026.09',
+      progress: 100,
+      desc: '외부 패키지 의존성 제거 및 순수 Node.js 경량화 완료'
+    }
+  ];
+  return readJSON(PROJECTS_FILE, defaultProjects);
 }
 
 function hashPassword(password) {
@@ -345,6 +379,60 @@ const server = http.createServer(async (req, res) => {
       let events = getCalendarEvents();
       events = events.filter(e => e.id !== id);
       writeJSON(CALENDAR_FILE, events);
+      return sendJSON(200, { success: true });
+    }
+
+    // 4단계: 프로젝트 허브 & 칸반 API
+    if (pathname === '/api/projects' && req.method === 'GET') {
+      const projects = getProjects();
+      const kanban = {
+        '기획': projects.filter(p => p.status === '기획'),
+        '진행중': projects.filter(p => p.status === '진행중'),
+        '검토': projects.filter(p => p.status === '검토'),
+        '완료': projects.filter(p => p.status === '완료')
+      };
+      return sendJSON(200, { projects, kanban });
+    }
+
+    if (pathname === '/api/projects' && req.method === 'POST') {
+      const { title, leader, period, desc, status, progress } = await readBody();
+      if (!title) {
+        return sendJSON(400, { error: '프로젝트 제목을 입력해 주세요.' });
+      }
+      const projects = getProjects();
+      const newPrj = {
+        id: 'prj_' + Date.now(),
+        title,
+        leader: leader || currentUser.name || currentUser.username,
+        period: period || '2026.10 - 2026.12',
+        desc: desc || '',
+        status: status || '기획',
+        progress: typeof progress === 'number' ? progress : 0,
+        createdAt: new Date().toISOString()
+      };
+      projects.push(newPrj);
+      writeJSON(PROJECTS_FILE, projects);
+      return sendJSON(200, { success: true, project: newPrj });
+    }
+
+    if (pathname === '/api/projects' && req.method === 'PATCH') {
+      const { id, status, progress } = await readBody();
+      if (!id) return sendJSON(400, { error: '프로젝트 ID가 필요합니다.' });
+      const projects = getProjects();
+      const prj = projects.find(p => p.id === id);
+      if (!prj) return sendJSON(404, { error: '프로젝트를 찾을 수 없습니다.' });
+      if (status) prj.status = status;
+      if (typeof progress === 'number') prj.progress = progress;
+      writeJSON(PROJECTS_FILE, projects);
+      return sendJSON(200, { success: true, project: prj });
+    }
+
+    if (pathname === '/api/projects' && req.method === 'DELETE') {
+      const id = url.searchParams.get('id');
+      if (!id) return sendJSON(400, { error: '삭제할 프로젝트 ID가 필요합니다.' });
+      let projects = getProjects();
+      projects = projects.filter(p => p.id !== id);
+      writeJSON(PROJECTS_FILE, projects);
       return sendJSON(200, { success: true });
     }
 

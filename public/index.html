@@ -485,6 +485,113 @@
     .cal-submit-btn:hover {
       background: #27272A;
     }
+
+    /* 4단계: 프로젝트 칸반 보드 스타일 */
+    .kanban-board {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      align-items: flex-start;
+      margin-top: 16px;
+    }
+    .kanban-col {
+      background: #F9FAFB;
+      border: 1px solid var(--border-soft);
+      border-radius: 14px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      min-height: 440px;
+    }
+    .kanban-col-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 10px;
+      border-bottom: 2px solid #E5E7EB;
+    }
+    .kanban-col-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: #374151;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .kanban-badge-count {
+      font-size: 12px;
+      font-weight: 600;
+      background: #FFFFFF;
+      border: 1px solid var(--border-soft);
+      padding: 2px 8px;
+      border-radius: 10px;
+      color: #6B7280;
+    }
+    .kanban-card {
+      background: #FFFFFF;
+      border: 1px solid var(--border-soft);
+      border-radius: 12px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.02);
+      transition: all 0.2s ease;
+    }
+    .kanban-card:hover {
+      box-shadow: 0 6px 18px var(--amber-glow);
+      border-color: var(--border-warm);
+    }
+    .kanban-card-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: #111827;
+      line-height: 1.4;
+    }
+    .kanban-card-desc {
+      font-size: 12px;
+      color: var(--text-muted);
+      line-height: 1.4;
+    }
+    .kanban-progress-bar {
+      height: 6px;
+      background: #E5E7EB;
+      border-radius: 3px;
+      overflow: hidden;
+      margin-top: 4px;
+    }
+    .kanban-progress-fill {
+      height: 100%;
+      background: var(--amber-warm);
+      border-radius: 3px;
+      transition: width 0.3s;
+    }
+    .kanban-card-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 11px;
+      color: #9CA3AF;
+      margin-top: 4px;
+    }
+    .kanban-actions {
+      display: flex;
+      gap: 6px;
+    }
+    .btn-move {
+      background: #F3F4F6;
+      border: 1px solid #E5E7EB;
+      border-radius: 6px;
+      padding: 3px 6px;
+      font-size: 11px;
+      cursor: pointer;
+      color: #4B5563;
+    }
+    .btn-move:hover {
+      background: #E5E7EB;
+      color: #111827;
+    }
   </style>
 </head>
 <body>
@@ -606,6 +713,62 @@
         <!-- 캘린더 이벤트 카드 동적 렌더링 -->
       </div>
     </div>
+
+    <!-- 3) 프로젝트 허브 & 칸반 뷰 패널 (4단계) -->
+    <div id="view-project" class="view-panel" style="display:none;">
+      <!-- 신규 프로젝트 생성 카드 -->
+      <div class="calendar-add-card">
+        <h3 style="font-size: 15px; font-weight: 700; margin-bottom: 12px; color: #111827;">➕ 새로운 프로젝트 등록</h3>
+        <div class="cal-form-row">
+          <input type="text" id="newPrjTitle" class="cal-input" placeholder="프로젝트명 (예: 사내 메신저 연계)">
+          <input type="text" id="newPrjPeriod" class="cal-input" placeholder="기간 (예: 2026.11 - 2026.12)">
+          <input type="text" id="newPrjLeader" class="cal-input" placeholder="담당자">
+          <select id="newPrjStatus" class="cal-input">
+            <option value="기획">기획</option>
+            <option value="진행중" selected>진행중</option>
+            <option value="검토">검토</option>
+            <option value="완료">완료</option>
+          </select>
+          <input type="number" id="newPrjProgress" class="cal-input" placeholder="진척률(%)" value="0" min="0" max="100">
+          <button id="addPrjBtn" class="cal-submit-btn">프로젝트 생성</button>
+        </div>
+      </div>
+
+      <!-- 4열 칸반 보드 -->
+      <div class="kanban-board">
+        <div class="kanban-col">
+          <div class="kanban-col-header">
+            <span class="kanban-col-title">💡 기획</span>
+            <span class="kanban-badge-count" id="count-plan">0</span>
+          </div>
+          <div id="cards-plan" style="display: flex; flex-direction: column; gap: 10px;"></div>
+        </div>
+
+        <div class="kanban-col">
+          <div class="kanban-col-header">
+            <span class="kanban-col-title">🚀 진행 중</span>
+            <span class="kanban-badge-count" id="count-progress">0</span>
+          </div>
+          <div id="cards-progress" style="display: flex; flex-direction: column; gap: 10px;"></div>
+        </div>
+
+        <div class="kanban-col">
+          <div class="kanban-col-header">
+            <span class="kanban-col-title">🔍 검토</span>
+            <span class="kanban-badge-count" id="count-review">0</span>
+          </div>
+          <div id="cards-review" style="display: flex; flex-direction: column; gap: 10px;"></div>
+        </div>
+
+        <div class="kanban-col">
+          <div class="kanban-col-header">
+            <span class="kanban-col-title">✅ 완료</span>
+            <span class="kanban-badge-count" id="count-done">0</span>
+          </div>
+          <div id="cards-done" style="display: flex; flex-direction: column; gap: 10px;"></div>
+        </div>
+      </div>
+    </div>
   </main>
 
   <script>
@@ -653,6 +816,9 @@
         } else if (view === 'calendar') {
           subtitle.textContent = '스마트 캘린더: D-Day 자동 카운트다운 및 회의 일정 관리';
           loadCalendar();
+        } else if (view === 'project') {
+          subtitle.textContent = '프로젝트 허브: 기획부터 완료까지 한눈에 파악하는 칸반 보드';
+          loadProjects();
         } else {
           subtitle.textContent = `${item.querySelector('span:last-child').textContent} 모듈이 연동 준비 중입니다.`;
         }
@@ -762,6 +928,127 @@
 
     // 오늘 날짜로 캘린더 기본값 세팅
     document.getElementById('newCalDate').value = new Date().toISOString().slice(0, 10);
+
+    // 4단계: 프로젝트 허브 & 칸반 데이터 로드 및 렌더링
+    async function loadProjects() {
+      try {
+        const res = await fetch('/api/projects');
+        if (!res.ok) return;
+        const data = await res.json();
+        const { kanban } = data;
+
+        const cols = [
+          { key: '기획', cardsEl: 'cards-plan', countEl: 'count-plan' },
+          { key: '진행중', cardsEl: 'cards-progress', countEl: 'count-progress' },
+          { key: '검토', cardsEl: 'cards-review', countEl: 'count-review' },
+          { key: '완료', cardsEl: 'cards-done', countEl: 'count-done' }
+        ];
+
+        cols.forEach(col => {
+          const cardsEl = document.getElementById(col.cardsEl);
+          const countEl = document.getElementById(col.countEl);
+          if (!cardsEl || !countEl) return;
+          const list = kanban[col.key] || [];
+          countEl.textContent = list.length;
+          cardsEl.innerHTML = '';
+
+          list.forEach(prj => {
+            const card = document.createElement('div');
+            card.className = 'kanban-card';
+            card.innerHTML = `
+              <div class="kanban-card-title">${prj.title}</div>
+              ${prj.desc ? `<div class="kanban-card-desc">${prj.desc}</div>` : ''}
+              <div class="kanban-progress-bar">
+                <div class="kanban-progress-fill" style="width: ${prj.progress || 0}%"></div>
+              </div>
+              <div class="kanban-card-footer">
+                <span>👤 ${prj.leader} · ${prj.progress || 0}%</span>
+                <span>📅 ${prj.period || ''}</span>
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 6px;">
+                <div class="kanban-actions">
+                  ${col.key !== '기획' ? `<button class="btn-move" onclick="moveProjectStatus('${prj.id}', '${getPrevStatus(col.key)}')">◀ 이전</button>` : ''}
+                  ${col.key !== '완료' ? `<button class="btn-move" onclick="moveProjectStatus('${prj.id}', '${getNextStatus(col.key)}')">다음 ▶</button>` : ''}
+                </div>
+                <button class="event-delete-btn" onclick="deleteProject('${prj.id}')">삭제</button>
+              </div>
+            `;
+            cardsEl.appendChild(card);
+          });
+        });
+      } catch (err) {
+        console.error('프로젝트 로드 실패:', err);
+      }
+    }
+
+    function getNextStatus(curr) {
+      if (curr === '기획') return '진행중';
+      if (curr === '진행중') return '검토';
+      if (curr === '검토') return '완료';
+      return '완료';
+    }
+
+    function getPrevStatus(curr) {
+      if (curr === '완료') return '검토';
+      if (curr === '검토') return '진행중';
+      if (curr === '진행중') return '기획';
+      return '기획';
+    }
+
+    window.moveProjectStatus = async function(id, newStatus) {
+      try {
+        const res = await fetch('/api/projects', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id, status: newStatus })
+        });
+        if (res.ok) loadProjects();
+      } catch (e) {
+        alert('상태 변경 실패');
+      }
+    };
+
+    window.deleteProject = async function(id) {
+      if (!confirm('이 프로젝트를 삭제하시겠습니까?')) return;
+      try {
+        const res = await fetch(`/api/projects?id=${encodeURIComponent(id)}`, { method: 'DELETE' });
+        if (res.ok) loadProjects();
+      } catch (e) {
+        alert('삭제 실패');
+      }
+    };
+
+    document.getElementById('addPrjBtn').addEventListener('click', async () => {
+      const title = document.getElementById('newPrjTitle').value.trim();
+      const period = document.getElementById('newPrjPeriod').value.trim();
+      const leader = document.getElementById('newPrjLeader').value.trim();
+      const status = document.getElementById('newPrjStatus').value;
+      const progress = parseInt(document.getElementById('newPrjProgress').value, 10) || 0;
+
+      if (!title) {
+        alert('프로젝트명을 입력해 주세요.');
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/projects', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ title, period, leader, status, progress })
+        });
+        if (res.ok) {
+          document.getElementById('newPrjTitle').value = '';
+          document.getElementById('newPrjPeriod').value = '';
+          document.getElementById('newPrjLeader').value = '';
+          loadProjects();
+        } else {
+          const errData = await res.json();
+          alert(errData.error || '생성 실패');
+        }
+      } catch (e) {
+        alert('서버 통신 오류');
+      }
+    });
 
     // 2단계: AI 대화 처리
     const chatBox = document.getElementById('chatBox');

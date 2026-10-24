@@ -180,6 +180,54 @@ async function runSelfTest() {
   assert(delEvRes.status === 200, '일정 삭제가 200이어야 합니다.');
   console.log('   ✓ 일정 삭제 성공');
 
+  // 10. 4단계: 프로젝트 허브 & 칸반 API (/api/projects) 점검
+  console.log('10. 4단계: 프로젝트 허브 & 칸반 보드 (/api/projects) CRUD 점검...');
+  const prjGetRes = await request('/api/projects', {
+    headers: { 'Cookie': sessionCookie }
+  });
+  assert(prjGetRes.status === 200, '프로젝트 조회가 200이어야 합니다.');
+  const prjGetData = prjGetRes.json();
+  assert(Array.isArray(prjGetData.projects), 'projects 필드가 배열이어야 합니다.');
+  assert(prjGetData.kanban && Array.isArray(prjGetData.kanban['기획']), '칸반 기획 컬럼이 존재해야 합니다.');
+  console.log(`   ✓ 프로젝트 목록 및 4열 칸반 컬럼 조회 성공 (총 ${prjGetData.projects.length}개 프로젝트)`);
+
+  // 신규 프로젝트 생성
+  const newPrjRes = await request('/api/projects', {
+    method: 'POST',
+    headers: { 'Cookie': sessionCookie }
+  }, JSON.stringify({
+    title: '자가테스트 프로젝트',
+    status: '기획',
+    progress: 10,
+    desc: '테스트용 프로젝트 설명'
+  }));
+  assert(newPrjRes.status === 200, '프로젝트 생성이 200이어야 합니다.');
+  const newPrjData = newPrjRes.json();
+  assert(newPrjData.success && newPrjData.project.id, '신규 프로젝트에 ID가 부여되어야 합니다.');
+  console.log(`   ✓ 프로젝트 생성 성공 (ID: ${newPrjData.project.id})`);
+
+  // 프로젝트 상태 이동 (기획 -> 진행중)
+  const patchPrjRes = await request('/api/projects', {
+    method: 'PATCH',
+    headers: { 'Cookie': sessionCookie }
+  }, JSON.stringify({
+    id: newPrjData.project.id,
+    status: '진행중',
+    progress: 50
+  }));
+  assert(patchPrjRes.status === 200, '프로젝트 상태 수정이 200이어야 합니다.');
+  const patchPrjData = patchPrjRes.json();
+  assert(patchPrjData.project.status === '진행중', '프로젝트 상태가 진행중으로 변경되어야 합니다.');
+  console.log(`   ✓ 프로젝트 칸반 상태 이동 성공 (기획 -> ${patchPrjData.project.status})`);
+
+  // 프로젝트 삭제
+  const delPrjRes = await request(`/api/projects?id=${newPrjData.project.id}`, {
+    method: 'DELETE',
+    headers: { 'Cookie': sessionCookie }
+  });
+  assert(delPrjRes.status === 200, '프로젝트 삭제가 200이어야 합니다.');
+  console.log('   ✓ 프로젝트 삭제 성공');
+
   console.log('--- 모든 자가 점검(selftest) 100% 통과 완료! ---');
 }
 
