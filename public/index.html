@@ -688,6 +688,81 @@
     .gantt-bar-overdue {
       background: #EF4444 !important;
     }
+
+    /* 6단계: 예약 & 알림 스타일 */
+    .reminder-card {
+      background: #FFFFFF;
+      border: 1px solid var(--border-soft);
+      border-radius: 14px;
+      padding: 18px 22px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+      transition: all 0.2s ease;
+    }
+    .reminder-card:hover {
+      border-color: var(--border-warm);
+      box-shadow: 0 4px 16px var(--amber-glow);
+    }
+    .reminder-info {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .reminder-time-badge {
+      font-size: 15px;
+      font-weight: 700;
+      color: #B45309;
+      background: #FEF3C7;
+      padding: 6px 12px;
+      border-radius: 8px;
+    }
+    .reminder-toggle {
+      position: relative;
+      display: inline-block;
+      width: 44px;
+      height: 24px;
+    }
+    .reminder-toggle input { opacity: 0; width: 0; height: 0; }
+    .slider {
+      position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
+      background-color: #D1D5DB; transition: .3s; border-radius: 24px;
+    }
+    .slider:before {
+      position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px;
+      background-color: white; transition: .3s; border-radius: 50%;
+    }
+    input:checked + .slider { background-color: var(--amber-warm); }
+    input:checked + .slider:before { transform: translateX(20px); }
+
+    /* 실시간 토스트 팝업 알림 (화면 우측 상단) */
+    .toast-container {
+      position: fixed;
+      top: 24px;
+      right: 24px;
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .toast-alert {
+      background: #18181B;
+      color: #FFFFFF;
+      border-left: 4px solid var(--amber-warm);
+      border-radius: 10px;
+      padding: 14px 18px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+      font-size: 13px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      animation: slideInRight 0.3s ease;
+    }
+    @keyframes slideInRight {
+      from { transform: translateX(100%); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
   </style>
 </head>
 <body>
@@ -706,6 +781,7 @@
       <li class="menu-item" data-view="calendar"><span class="icon">📅</span><span>일정</span></li>
       <li class="menu-item" data-view="project"><span class="icon">📁</span><span>프로젝트</span></li>
       <li class="menu-item" data-view="wbs"><span class="icon">📊</span><span>WBS</span></li>
+      <li class="menu-item" data-view="reminder"><span class="icon">⏰</span><span>예약/알림</span></li>
       <li class="menu-item" data-view="mail"><span class="icon">✉️</span><span>메일</span></li>
       <li class="menu-item" data-view="messenger"><span class="icon">💬</span><span>메신저</span></li>
       <li class="menu-item" data-view="meeting"><span class="icon">📝</span><span>회의록</span></li>
@@ -927,6 +1003,43 @@
         <div id="ganttTrackList"></div>
       </div>
     </div>
+
+    <!-- 5) 예약 & 알림 뷰 패널 (6단계) -->
+    <div id="view-reminder" class="view-panel" style="display:none;">
+      <!-- 신규 예약/알림 등록 카드 -->
+      <div class="calendar-add-card">
+        <h3 style="font-size: 15px; font-weight: 700; margin-bottom: 12px; color: #111827;">➕ 새로운 예약 알림 스케줄 등록</h3>
+        <div class="cal-form-row">
+          <input type="text" id="newRemTitle" class="cal-input" placeholder="알림 내용 (예: 오후 6시 퇴근 업무일지 정리)">
+          <input type="time" id="newRemTime" class="cal-input" value="09:00">
+          <select id="newRemRepeat" class="cal-input">
+            <option value="매일">매일</option>
+            <option value="평일" selected>평일 (월~금)</option>
+            <option value="주말">주말</option>
+            <option value="1회">1회성</option>
+          </select>
+          <select id="newRemType" class="cal-input">
+            <option value="정기 브리핑">정기 브리핑</option>
+            <option value="회의 알림">회의 알림</option>
+            <option value="업무일지">업무일지</option>
+            <option value="마감 알림">마감 알림</option>
+          </select>
+          <button id="addRemBtn" class="cal-submit-btn">알림 등록</button>
+        </div>
+      </div>
+
+      <!-- 예약 알림 목록 -->
+      <div class="wbs-container">
+        <div class="wbs-header-row">
+          <h3 style="font-size: 16px; font-weight: 700; color: #111827;">⏰ 등록된 자동화 예약 & 알림 스케줄러</h3>
+          <button class="btn-briefing-action" onclick="testNotificationAlert()">🔔 알림 테스트 팝업</button>
+        </div>
+        <div id="reminderList"></div>
+      </div>
+    </div>
+
+    <!-- 우측 상단 토스트 알림 컨테이너 -->
+    <div id="toastContainer" class="toast-container"></div>
   </main>
 
   <script>
@@ -980,6 +1093,9 @@
         } else if (view === 'wbs') {
           subtitle.textContent = 'MS Project급 WBS 계층 트리 및 인터랙티브 간트차트 엔진';
           loadWBS();
+        } else if (view === 'reminder') {
+          subtitle.textContent = '크론형 정기 스케줄러 & 실시간 팝업 알림 센터';
+          loadReminders();
         } else {
           subtitle.textContent = `${item.querySelector('span:last-child').textContent} 모듈이 연동 준비 중입니다.`;
         }
@@ -1379,6 +1495,112 @@
 
     document.getElementById('newWbsStart').value = new Date().toISOString().slice(0, 10);
     document.getElementById('newWbsEnd').value = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+
+    // 6단계: 예약 & 알림 센터 데이터 로드 및 렌더링
+    async function loadReminders() {
+      try {
+        const res = await fetch('/api/reminders');
+        if (!res.ok) return;
+        const data = await res.json();
+        const listEl = document.getElementById('reminderList');
+        listEl.innerHTML = '';
+
+        data.reminders.forEach(rem => {
+          const card = document.createElement('div');
+          card.className = 'reminder-card';
+          card.innerHTML = `
+            <div class="reminder-info">
+              <span class="reminder-time-badge">⏰ ${rem.time}</span>
+              <div>
+                <div style="font-size: 15px; font-weight: 600; color: #111827;">${rem.title}</div>
+                <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">
+                  반복: <strong>${rem.repeat}</strong> · 유형: <strong>${rem.type}</strong>
+                  ${rem.lastTriggered ? ` · 최근 실행: ${rem.lastTriggered}` : ''}
+                </div>
+              </div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 16px;">
+              <label class="reminder-toggle">
+                <input type="checkbox" ${rem.enabled ? 'checked' : ''} onchange="toggleReminder('${rem.id}', this.checked)">
+                <span class="slider"></span>
+              </label>
+              <button class="event-delete-btn" onclick="deleteReminder('${rem.id}')">삭제</button>
+            </div>
+          `;
+          listEl.appendChild(card);
+        });
+      } catch (err) {
+        console.error('알림 목록 로드 실패:', err);
+      }
+    }
+
+    window.toggleReminder = async function(id, enabled) {
+      try {
+        await fetch('/api/reminders', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id, enabled })
+        });
+        loadReminders();
+      } catch (e) {
+        alert('알림 상태 변경 실패');
+      }
+    };
+
+    window.deleteReminder = async function(id) {
+      if (!confirm('이 예약 알림을 삭제하시겠습니까?')) return;
+      try {
+        const res = await fetch(`/api/reminders?id=${encodeURIComponent(id)}`, { method: 'DELETE' });
+        if (res.ok) loadReminders();
+      } catch (e) {
+        alert('삭제 실패');
+      }
+    };
+
+    document.getElementById('addRemBtn').addEventListener('click', async () => {
+      const title = document.getElementById('newRemTitle').value.trim();
+      const time = document.getElementById('newRemTime').value;
+      const repeat = document.getElementById('newRemRepeat').value;
+      const type = document.getElementById('newRemType').value;
+
+      if (!title || !time) {
+        alert('알림 제목과 시간을 입력해 주세요.');
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/reminders', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ title, time, repeat, type })
+        });
+        if (res.ok) {
+          document.getElementById('newRemTitle').value = '';
+          loadReminders();
+          showToast(`[${type}] "${title}" 알림이 성공적으로 등록되었습니다.`);
+        }
+      } catch (e) {
+        alert('등록 실패');
+      }
+    });
+
+    // 화면 우측 상단 토스트 알림 팝업 함수
+    function showToast(msg) {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      toast.className = 'toast-alert';
+      toast.innerHTML = `<span>🔔</span><span>${msg}</span>`;
+      container.appendChild(toast);
+      setTimeout(() => {
+        toast.style.transition = 'opacity 0.4s';
+        toast.style.opacity = '0';
+        setTimeout(() => toast.remove(), 400);
+      }, 4000);
+    }
+
+    window.testNotificationAlert = function() {
+      showToast('[정기 브리핑] 아침 9시 데일리 모닝 브리핑 스케줄 알림이 작동했습니다!');
+    };
 
     // 2단계: AI 대화 처리
     const chatBox = document.getElementById('chatBox');

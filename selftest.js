@@ -278,6 +278,53 @@ async function runSelfTest() {
   assert(delWbsRes.status === 200, 'WBS 삭제가 200이어야 합니다.');
   console.log('   ✓ WBS 일감 삭제 성공');
 
+  // 12. 6단계: 예약 스케줄러 & 알림 센터 (/api/reminders) 점검
+  console.log('12. 6단계: 예약 스케줄러 & 알림 센터 (/api/reminders) CRUD 및 활성 점검...');
+  const remGetRes = await request('/api/reminders', {
+    headers: { 'Cookie': sessionCookie }
+  });
+  assert(remGetRes.status === 200, '알림 목록 조회가 200이어야 합니다.');
+  const remGetData = remGetRes.json();
+  assert(Array.isArray(remGetData.reminders), 'reminders 필드가 배열이어야 합니다.');
+  assert(Array.isArray(remGetData.activeAlerts), 'activeAlerts 필드가 배열이어야 합니다.');
+  console.log(`   ✓ 예약 알림 목록 및 활성 알림 조회 성공 (등록: ${remGetData.reminders.length}개, 활성: ${remGetData.activeAlerts.length}개)`);
+
+  // 알림 신규 등록
+  const newRemRes = await request('/api/reminders', {
+    method: 'POST',
+    headers: { 'Cookie': sessionCookie }
+  }, JSON.stringify({
+    title: '자가테스트 미팅 10분 전 알림',
+    time: '15:50',
+    repeat: '1회',
+    type: '회의 알림'
+  }));
+  assert(newRemRes.status === 200, '알림 생성이 200이어야 합니다.');
+  const newRemData = newRemRes.json();
+  assert(newRemData.success && newRemData.reminder.id, '알림 항목에 ID가 부여되어야 합니다.');
+  console.log(`   ✓ 새 예약 알림 등록 성공 (ID: ${newRemData.reminder.id}, 시간: ${newRemData.reminder.time})`);
+
+  // 알림 활성 토글 (true -> false)
+  const patchRemRes = await request('/api/reminders', {
+    method: 'PATCH',
+    headers: { 'Cookie': sessionCookie }
+  }, JSON.stringify({
+    id: newRemData.reminder.id,
+    enabled: false
+  }));
+  assert(patchRemRes.status === 200, '알림 토글 수정이 200이어야 합니다.');
+  const patchRemData = patchRemRes.json();
+  assert(patchRemData.reminder.enabled === false, '알림 활성 상태가 false로 변경되어야 합니다.');
+  console.log('   ✓ 예약 알림 On/Off 토글 전환 성공');
+
+  // 알림 삭제
+  const delRemRes = await request(`/api/reminders?id=${newRemData.reminder.id}`, {
+    method: 'DELETE',
+    headers: { 'Cookie': sessionCookie }
+  });
+  assert(delRemRes.status === 200, '알림 삭제가 200이어야 합니다.');
+  console.log('   ✓ 예약 알림 삭제 성공');
+
   console.log('--- 모든 자가 점검(selftest) 100% 통과 완료! ---');
 }
 

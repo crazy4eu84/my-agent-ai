@@ -12,6 +12,7 @@ const SESSIONS_FILE = path.join(DATA_DIR, 'sessions.json');
 const CALENDAR_FILE = path.join(DATA_DIR, 'calendar.json');
 const PROJECTS_FILE = path.join(DATA_DIR, 'projects.json');
 const WBS_FILE = path.join(DATA_DIR, 'wbs.json');
+const REMINDERS_FILE = path.join(DATA_DIR, 'reminders.json');
 const PUBLIC_DIR = path.join(__dirname, 'public');
 
 if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
@@ -175,6 +176,39 @@ function getWBS() {
     }
   ];
   return readJSON(WBS_FILE, defaultWBS);
+}
+
+function getReminders() {
+  const defaultReminders = [
+    {
+      id: 'rem_1',
+      title: '아침 9시 데일리 모닝 브리핑',
+      time: '09:00',
+      repeat: '매일',
+      type: '정기 브리핑',
+      enabled: true,
+      lastTriggered: '2026-10-24 09:00'
+    },
+    {
+      id: 'rem_2',
+      title: '오후 6시 퇴근 업무일지 자동 정리',
+      time: '18:00',
+      repeat: '평일',
+      type: '업무일지',
+      enabled: true,
+      lastTriggered: null
+    },
+    {
+      id: 'rem_3',
+      title: '4분기 릴리즈 회의 시작 10분 전 알림',
+      time: '13:50',
+      repeat: '1회',
+      type: '회의 알림',
+      enabled: true,
+      lastTriggered: null
+    }
+  ];
+  return readJSON(REMINDERS_FILE, defaultReminders);
 }
 
 function hashPassword(password) {
@@ -615,6 +649,64 @@ const server = http.createServer(async (req, res) => {
         if (p.children) p.children = p.children.filter(c => c.id !== id);
       });
       writeJSON(WBS_FILE, items);
+      return sendJSON(200, { success: true });
+    }
+
+    // 6단계: 예약 스케줄러 & 알림 센터 API
+    if (pathname === '/api/reminders' && req.method === 'GET') {
+      const reminders = getReminders();
+      const activeAlerts = reminders
+        .filter(r => r.enabled)
+        .map(r => ({
+          id: r.id,
+          title: r.title,
+          time: r.time,
+          type: r.type,
+          message: `[${r.type}] ${r.title} (${r.time}) 스케줄이 활성화되어 있습니다.`
+        }));
+      return sendJSON(200, { reminders, activeAlerts });
+    }
+
+    if (pathname === '/api/reminders' && req.method === 'POST') {
+      const { title, time, repeat, type } = await readBody();
+      if (!title || !time) {
+        return sendJSON(400, { error: '알림 제목과 시간을 입력해 주세요.' });
+      }
+      const reminders = getReminders();
+      const newReminder = {
+        id: 'rem_' + Date.now(),
+        title,
+        time,
+        repeat: repeat || '매일',
+        type: type || '정기 알림',
+        enabled: true,
+        lastTriggered: null,
+        createdAt: new Date().toISOString()
+      };
+      reminders.push(newReminder);
+      writeJSON(REMINDERS_FILE, reminders);
+      return sendJSON(200, { success: true, reminder: newReminder });
+    }
+
+    if (pathname === '/api/reminders' && req.method === 'PATCH') {
+      const { id, enabled, title, time } = await readBody();
+      if (!id) return sendJSON(400, { error: '알림 ID가 필요합니다.' });
+      const reminders = getReminders();
+      const rem = reminders.find(r => r.id === id);
+      if (!rem) return sendJSON(404, { error: '알림을 찾을 수 없습니다.' });
+      if (typeof enabled === 'boolean') rem.enabled = enabled;
+      if (title) rem.title = title;
+      if (time) rem.time = time;
+      writeJSON(REMINDERS_FILE, reminders);
+      return sendJSON(200, { success: true, reminder: rem });
+    }
+
+    if (pathname === '/api/reminders' && req.method === 'DELETE') {
+      const id = url.searchParams.get('id');
+      if (!id) return sendJSON(400, { error: '삭제할 알림 ID가 필요합니다.' });
+      let reminders = getReminders();
+      reminders = reminders.filter(r => r.id !== id);
+      writeJSON(REMINDERS_FILE, reminders);
       return sendJSON(200, { success: true });
     }
 
