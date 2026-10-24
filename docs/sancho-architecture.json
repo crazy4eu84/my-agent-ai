@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Sancho AI Assistant System Architecture",
+    "subtitle": "Node.js Built-in + Local AI Brain + Local JSON Storage",
+    "output": "sancho-architecture.html",
+    "quality_profile": "standard"
+  },
+  "components": [
+    { "id": "browser", "type": "frontend", "label": "Web Browser", "sublabel": "Dashboard & Chat UI", "pos": [40, 240], "size": [140, 70] },
+    { "id": "auth", "type": "security", "label": "Session Auth", "sublabel": "Cookie / Crypto Token", "pos": [260, 60], "size": [150, 60] },
+    { "id": "server", "type": "backend", "label": "Node.js Server", "sublabel": "Pure built-in modules", "pos": [260, 240], "size": [150, 70] },
+    { "id": "guard", "type": "security", "label": "Safety Guard", "sublabel": "No delete / No auto-mail", "pos": [260, 430], "size": [150, 65] },
+    { "id": "bridge", "type": "backend", "label": "Agent Bridge", "sublabel": "child_process runner", "pos": [510, 240], "size": [150, 70] },
+    { "id": "brain", "type": "external", "label": "Local AI Brain", "sublabel": "Claude Code / Antigravity", "pos": [760, 240], "size": [160, 70] },
+    { "id": "data_json", "type": "database", "label": "JSON Store", "sublabel": "data/*.json (git-ignored)", "pos": [510, 60], "size": [150, 60] },
+    { "id": "data_md", "type": "database", "label": "Markdown Memory", "sublabel": "data/memory & notes", "pos": [760, 60], "size": [160, 60] }
+  ],
+  "boundaries": [
+    { "kind": "region", "label": "Local PC Environment (Zero Cloud DB, Zero Ext Packages)", "wraps": ["auth", "server", "guard", "bridge", "brain", "data_json", "data_md"] }
+  ],
+  "connections": [
+    { "id": "c1", "from": "browser", "to": "server", "label": "HTTP / Chat / Dashboard" },
+    { "id": "c2", "from": "server", "to": "auth", "label": "Check Login", "fromSide": "top", "toSide": "bottom" },
+    { "id": "c3", "from": "server", "to": "guard", "label": "Policy Check", "variant": "security", "fromSide": "bottom", "toSide": "top", "labelDy": 24 },
+    { "id": "c4", "from": "server", "to": "data_json", "label": "fs read/write", "fromSide": "top", "toSide": "left" },
+    { "id": "c5", "from": "server", "to": "bridge", "label": "Filtered Request", "labelDy": -20 },
+    { "id": "c6", "from": "bridge", "to": "brain", "label": "CLI stdio", "variant": "emphasis" },
+    { "id": "c7", "from": "brain", "to": "data_md", "label": "Load Context / Memory", "fromSide": "top", "toSide": "bottom" }
+  ],
+  "cards": [
+    { "dot": "emerald", "title": "Zero External Dependency", "items": ["Node.js built-in modules only (http, fs, path, crypto, child_process)", "Zero npm dependencies required"] },
+    { "dot": "cyan", "title": "Local AI Brain Reuse", "items": ["No paid API key required", "Reuses locally authenticated Claude Code / Antigravity CLI"] },
+    { "dot": "rose", "title": "Ironclad Safety Rules", "items": ["No auto-sending emails", "No unconfirmed file deletions", "Zero external outbound data exfiltration"] }
+  ]
+}
