@@ -309,8 +309,60 @@
       transition: all 0.2s;
     }
 
-    .btn-send:hover {
-      background: #27272A;
+    .chat-user {
+      background: #18181B;
+      color: #FFFFFF;
+      align-self: flex-end;
+    }
+
+    .briefing-banner {
+      background: linear-gradient(135deg, #FFFBEB 0%, #FEF3C7 100%);
+      border: 1px solid var(--border-warm);
+      border-radius: 14px;
+      padding: 18px 24px;
+      margin-bottom: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 4px 12px rgba(217, 119, 6, 0.06);
+    }
+
+    .briefing-content {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .briefing-icon {
+      font-size: 28px;
+    }
+
+    .briefing-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: #92400E;
+      margin-bottom: 4px;
+    }
+
+    .briefing-desc {
+      font-size: 13px;
+      color: #78350F;
+      line-height: 1.4;
+    }
+
+    .btn-briefing-action {
+      background: #D97706;
+      color: #FFFFFF;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .btn-briefing-action:hover {
+      background: #B45309;
     }
   </style>
 </head>
@@ -363,19 +415,31 @@
       </div>
     </div>
 
+    <!-- 2단계: 아침 출근 브리핑 배너 -->
+    <div class="briefing-banner" id="briefingBanner">
+      <div class="briefing-content">
+        <span class="briefing-icon">☀️</span>
+        <div>
+          <div class="briefing-title" id="briefingTitle">오늘의 산초 모닝 브리핑</div>
+          <div class="briefing-desc" id="briefingDesc">잠시만 기다려주세요, 오늘의 중요 일정과 업무 현황을 분석하고 있습니다...</div>
+        </div>
+      </div>
+      <button class="btn-briefing-action" id="refreshBriefingBtn">브리핑 새로고침</button>
+    </div>
+
     <!-- 요약 카드 3종 -->
     <div class="dashboard-grid">
       <div class="card">
         <h3><span>📅</span> 오늘의 일정</h3>
-        <p>오늘 예정된 미팅이나 주요 마감 일정이 여기에 요약 표시됩니다.</p>
+        <p id="scheduleCardSummary">오늘 예정된 미팅이나 주요 일정을 로딩 중입니다...</p>
       </div>
       <div class="card">
         <h3><span>📊</span> WBS 긴급 일감</h3>
-        <p>프로젝트에서 마감이 임박한 세부 일감이 자동으로 브리핑됩니다.</p>
+        <p id="wbsCardSummary">마감이 임박한 세부 일감을 로딩 중입니다...</p>
       </div>
       <div class="card">
         <h3><span>🎯</span> 이번 달 목표</h3>
-        <p>핵심 목표 달성률(OKR/KPI) 게이지가 실시간으로 반영됩니다.</p>
+        <p id="goalCardSummary">목표 달성률 게이지를 계산 중입니다...</p>
       </div>
     </div>
 
@@ -396,7 +460,7 @@
   </main>
 
   <script>
-    // 로그인 상태 검증
+    // 로그인 상태 검증 및 브리핑 로드
     async function initDashboard() {
       try {
         const res = await fetch('/api/status');
@@ -409,10 +473,71 @@
           document.getElementById('userNameLabel').textContent = data.user.name || data.user.username;
           document.getElementById('welcomeHeading').textContent = `${data.user.name || data.user.username}님, 좋은 아침입니다.`;
         }
+        loadBriefing();
       } catch (e) {
         window.location.href = '/login.html';
       }
     }
+
+    // 2단계: 출근 브리핑 데이터 가져오기
+    async function loadBriefing() {
+      try {
+        const res = await fetch('/api/briefing');
+        if (res.ok) {
+          const data = await res.json();
+          document.getElementById('briefingTitle').textContent = `${data.date} 출근 브리핑: ${data.greeting}`;
+          document.getElementById('briefingDesc').textContent = data.briefingText;
+          document.getElementById('scheduleCardSummary').innerHTML = `오늘 예정된 회의 <strong>${data.stats.todayScheduleCount}건</strong>이 있습니다. (14:00 릴리즈 회의)`;
+          document.getElementById('wbsCardSummary').innerHTML = `마감 임박 일감 <strong>${data.stats.urgentWbsCount}건</strong>: WBS 간트차트 엔진 연동`;
+          document.getElementById('goalCardSummary').innerHTML = `핵심 목표 달성률 <strong>${data.stats.goalProgress}%</strong> 순항 중입니다.`;
+        }
+      } catch (err) {
+        console.error('브리핑 로드 실패:', err);
+      }
+    }
+
+    document.getElementById('refreshBriefingBtn').addEventListener('click', loadBriefing);
+
+    // 2단계: AI 대화 처리
+    const chatBox = document.getElementById('chatBox');
+    const chatInput = document.getElementById('chatInput');
+    const sendBtn = document.getElementById('sendBtn');
+
+    function appendMessage(text, isUser = false) {
+      const msgDiv = document.createElement('div');
+      msgDiv.className = `chat-message ${isUser ? 'chat-user' : 'chat-bot'}`;
+      msgDiv.innerHTML = text.replace(/\n/g, '<br>');
+      chatBox.appendChild(msgDiv);
+      chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    async function sendMessage() {
+      const text = chatInput.value.trim();
+      if (!text) return;
+      appendMessage(text, true);
+      chatInput.value = '';
+
+      try {
+        const res = await fetch('/api/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: text })
+        });
+        const data = await res.json();
+        if (res.ok) {
+          appendMessage(data.reply, false);
+        } else {
+          appendMessage(`[오류] ${data.error || '응답을 받지 못했습니다.'}`, false);
+        }
+      } catch (e) {
+        appendMessage('[오류] 서버와의 연결에 실패했습니다.', false);
+      }
+    }
+
+    sendBtn.addEventListener('click', sendMessage);
+    chatInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') sendMessage();
+    });
 
     // 로그아웃 버튼
     document.getElementById('logoutBtn').addEventListener('click', async () => {

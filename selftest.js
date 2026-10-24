@@ -122,6 +122,28 @@ async function runSelfTest() {
   assert(lockRes.status === 429, '10회 초과 실패 시 429 Locked 상태여야 합니다.');
   console.log('   ✓ 10회 실패 후 10분 계정 잠금(429) 완벽 방어 통과');
 
+  // 7. 2단계: 출근 아침 브리핑 API 점검
+  console.log('7. 2단계: 출근 아침 브리핑 API (/api/briefing) 점검...');
+  const briefingRes = await request('/api/briefing', {
+    headers: { 'Cookie': sessionCookie }
+  });
+  assert(briefingRes.status === 200, '로그인 상태에서 /api/briefing은 200이어야 합니다.');
+  const briefingData = briefingRes.json();
+  assert(briefingData && briefingData.briefingText, '브리핑 텍스트가 정상 수신되어야 합니다.');
+  assert(briefingData.stats && typeof briefingData.stats.goalProgress === 'number', '통계 데이터가 포함되어야 합니다.');
+  console.log(`   ✓ 아침 브리핑 정상 수신: "${briefingData.briefingText.slice(0, 30)}..."`);
+
+  // 8. 2단계: 실시간 AI 비서 대화 API 점검
+  console.log('8. 2단계: 실시간 AI 대화 API (/api/chat) 점검...');
+  const chatRes = await request('/api/chat', {
+    method: 'POST',
+    headers: { 'Cookie': sessionCookie }
+  }, JSON.stringify({ message: '오늘 일정 브리핑해줘' }));
+  assert(chatRes.status === 200, '/api/chat 호출 성공 200이어야 합니다.');
+  const chatData = chatRes.json();
+  assert(chatData && chatData.reply, '산초 AI의 회신(reply)이 존재해야 합니다.');
+  console.log(`   ✓ 산초 AI 대화 정상 응답 수신: "${chatData.reply.slice(0, 30)}..."`);
+
   console.log('--- 모든 자가 점검(selftest) 100% 통과 완료! ---');
 }
 
