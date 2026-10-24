@@ -2,36 +2,36 @@
   "schema_version": 1,
   "diagram_type": "architecture",
   "meta": {
-    "title": "Sancho AI Assistant System Architecture",
-    "subtitle": "Node.js Built-in + Local AI Brain + Local JSON Storage",
+    "title": "나의 AI 비서 산초(Sancho) 시스템 구조도",
+    "subtitle": "순수 Node.js 내장 기능 + PC AI 두뇌 + 로컬 파일 저장소",
     "output": "sancho-architecture.html",
     "quality_profile": "standard"
   },
   "components": [
-    { "id": "browser", "type": "frontend", "label": "Web Browser", "sublabel": "Dashboard & Chat UI", "pos": [40, 240], "size": [140, 70] },
-    { "id": "auth", "type": "security", "label": "Session Auth", "sublabel": "Cookie / Crypto Token", "pos": [260, 60], "size": [150, 60] },
-    { "id": "server", "type": "backend", "label": "Node.js Server", "sublabel": "Pure built-in modules", "pos": [260, 240], "size": [150, 70] },
-    { "id": "guard", "type": "security", "label": "Safety Guard", "sublabel": "No delete / No auto-mail", "pos": [260, 430], "size": [150, 65] },
-    { "id": "bridge", "type": "backend", "label": "Agent Bridge", "sublabel": "child_process runner", "pos": [510, 240], "size": [150, 70] },
-    { "id": "brain", "type": "external", "label": "Local AI Brain", "sublabel": "Claude Code / Antigravity", "pos": [760, 240], "size": [160, 70] },
-    { "id": "data_json", "type": "database", "label": "JSON Store", "sublabel": "data/*.json (git-ignored)", "pos": [510, 60], "size": [150, 60] },
-    { "id": "data_md", "type": "database", "label": "Markdown Memory", "sublabel": "data/memory & notes", "pos": [760, 60], "size": [160, 60] }
+    { "id": "browser", "type": "frontend", "label": "웹 브라우저", "sublabel": "대시보드 및 AI 채팅 화면", "pos": [40, 240], "size": [150, 70] },
+    { "id": "auth", "type": "security", "label": "로그인 인증기", "sublabel": "쿠키 및 암호 토큰 검증", "pos": [260, 60], "size": [150, 60] },
+    { "id": "server", "type": "backend", "label": "Node.js 서버", "sublabel": "외부 설치 없는 순수 내장 기능", "pos": [260, 240], "size": [150, 70] },
+    { "id": "guard", "type": "security", "label": "3대 안전장치", "sublabel": "삭제·자동메일·유출 차단", "pos": [260, 430], "size": [150, 65] },
+    { "id": "bridge", "type": "backend", "label": "에이전트 연결기", "sublabel": "내장 자식 프로세스 실행기", "pos": [510, 240], "size": [150, 70] },
+    { "id": "brain", "type": "external", "label": "내 PC의 AI 두뇌", "sublabel": "기존 구독 CLI (비용 0원)", "pos": [760, 240], "size": [160, 70] },
+    { "id": "data_json", "type": "database", "label": "JSON 파일 보관소", "sublabel": "일정·WBS·설정 (깃 제외)", "pos": [510, 60], "size": [150, 60] },
+    { "id": "data_md", "type": "database", "label": "마크다운 기억소", "sublabel": "과거 대화 기억·지식노트", "pos": [760, 60], "size": [160, 60] }
   ],
   "boundaries": [
-    { "kind": "region", "label": "Local PC Environment (Zero Cloud DB, Zero Ext Packages)", "wraps": ["auth", "server", "guard", "bridge", "brain", "data_json", "data_md"] }
+    { "kind": "region", "label": "내 컴퓨터(PC) 로컬 환경 (외부 DB 없음, 외부 설치 패키지 0개)", "wraps": ["auth", "server", "guard", "bridge", "brain", "data_json", "data_md"] }
   ],
   "connections": [
-    { "id": "c1", "from": "browser", "to": "server", "label": "HTTP / Chat / Dashboard" },
-    { "id": "c2", "from": "server", "to": "auth", "label": "Check Login", "fromSide": "top", "toSide": "bottom" },
-    { "id": "c3", "from": "server", "to": "guard", "label": "Policy Check", "variant": "security", "fromSide": "bottom", "toSide": "top", "labelDy": 24 },
-    { "id": "c4", "from": "server", "to": "data_json", "label": "fs read/write", "fromSide": "top", "toSide": "left" },
-    { "id": "c5", "from": "server", "to": "bridge", "label": "Filtered Request", "labelDy": -20 },
-    { "id": "c6", "from": "bridge", "to": "brain", "label": "CLI stdio", "variant": "emphasis" },
-    { "id": "c7", "from": "brain", "to": "data_md", "label": "Load Context / Memory", "fromSide": "top", "toSide": "bottom" }
+    { "id": "c1", "from": "browser", "to": "server", "label": "채팅 입력 및 화면 요청" },
+    { "id": "c2", "from": "server", "to": "auth", "label": "로그인 확인", "fromSide": "top", "toSide": "bottom" },
+    { "id": "c3", "from": "server", "to": "guard", "label": "안전 점검", "variant": "security", "fromSide": "bottom", "toSide": "top", "labelDy": 24 },
+    { "id": "c4", "from": "server", "to": "data_json", "label": "파일 읽기/쓰기", "fromSide": "top", "toSide": "left" },
+    { "id": "c5", "from": "server", "to": "bridge", "label": "검증된 요청 전달", "labelDy": -20 },
+    { "id": "c6", "from": "bridge", "to": "brain", "label": "AI 실행 및 답변 수신", "variant": "emphasis" },
+    { "id": "c7", "from": "brain", "to": "data_md", "label": "기억 및 지식 불러오기", "fromSide": "top", "toSide": "bottom" }
   ],
   "cards": [
-    { "dot": "emerald", "title": "Zero External Dependency", "items": ["Node.js built-in modules only (http, fs, path, crypto, child_process)", "Zero npm dependencies required"] },
-    { "dot": "cyan", "title": "Local AI Brain Reuse", "items": ["No paid API key required", "Reuses locally authenticated Claude Code / Antigravity CLI"] },
-    { "dot": "rose", "title": "Ironclad Safety Rules", "items": ["No auto-sending emails", "No unconfirmed file deletions", "Zero external outbound data exfiltration"] }
+    { "dot": "emerald", "title": "외부 패키지 0개", "items": ["별도 설치 프로그램 없이 순수 Node.js 내장 도구만 사용", "가볍고 충돌 위험 없는 깔끔한 구조"] },
+    { "dot": "cyan", "title": "내 PC 구독 AI 그대로 사용", "items": ["비싼 유료 API 키를 새로 살 필요 없음", "컴퓨터에 이미 로그인된 Claude/Antigravity 두뇌 연결"] },
+    { "dot": "rose", "title": "철저한 3대 안전장치", "items": ["메일은 절대 혼자 보내지 않고 사용자 승인 필요", "파일 삭제는 반드시 확인창을 띄우고 삭제", "모든 자료는 컴퓨터 밖으로 나가지 않음"] }
   ]
 }
