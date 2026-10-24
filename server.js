@@ -9,6 +9,7 @@ const HOST = '127.0.0.1';
 const DATA_DIR = path.join(__dirname, 'data');
 const USERS_FILE = path.join(DATA_DIR, 'users.json');
 const SESSIONS_FILE = path.join(DATA_DIR, 'sessions.json');
+const CALENDAR_FILE = path.join(DATA_DIR, 'calendar.json');
 const PUBLIC_DIR = path.join(__dirname, 'public');
 
 if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
@@ -24,6 +25,39 @@ function readJSON(file, fallback) {
 
 function writeJSON(file, data) {
   fs.writeFileSync(file, JSON.stringify(data, null, 2), 'utf-8');
+}
+
+function getCalendarEvents() {
+  const defaultEvents = [
+    {
+      id: 'evt_1',
+      title: '4분기 비서 플랫폼 릴리즈 회의',
+      date: new Date().toISOString().slice(0, 10),
+      time: '14:00 - 15:30',
+      location: '대회의실 A',
+      category: '회의',
+      notes: 'Sancho 13단계 모듈 검수 및 릴리즈 계획 논의'
+    },
+    {
+      id: 'evt_2',
+      title: 'WBS 간트차트 엔진 최종 점검',
+      date: new Date().toISOString().slice(0, 10),
+      time: '16:00 - 17:00',
+      location: '온라인 화상회의',
+      category: '개발',
+      notes: '진척률 자동 계산 및 계층 구조 검증'
+    },
+    {
+      id: 'evt_3',
+      title: '경영진 주간 정례 브리핑',
+      date: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
+      time: '10:00 - 11:30',
+      location: '임원회의실',
+      category: '보고',
+      notes: 'Sancho AI 플랫폼 도입 성과 보고'
+    }
+  ];
+  return readJSON(CALENDAR_FILE, defaultEvents);
 }
 
 function hashPassword(password) {
@@ -265,6 +299,53 @@ const server = http.createServer(async (req, res) => {
         timestamp: new Date().toISOString(),
         user: currentUser.username
       });
+    }
+
+    // 3단계: 캘린더 일정 API
+    if (pathname === '/api/calendar' && req.method === 'GET') {
+      const events = getCalendarEvents();
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const enhancedEvents = events.map(e => {
+        const evDate = new Date(e.date);
+        evDate.setHours(0, 0, 0, 0);
+        const diffDays = Math.round((evDate - today) / (1000 * 60 * 60 * 24));
+        let dday = 'D-Day';
+        if (diffDays > 0) dday = `D-${diffDays}`;
+        else if (diffDays < 0) dday = `D+${Math.abs(diffDays)}`;
+        return { ...e, dday, diffDays };
+      });
+      return sendJSON(200, { events: enhancedEvents });
+    }
+
+    if (pathname === '/api/calendar' && req.method === 'POST') {
+      const { title, date, time, location, category, notes } = await readBody();
+      if (!title || !date) {
+        return sendJSON(400, { error: '일정 제목과 날짜를 입력해 주세요.' });
+      }
+      const events = getCalendarEvents();
+      const newEvent = {
+        id: 'evt_' + Date.now(),
+        title,
+        date,
+        time: time || '종일',
+        location: location || '미지정',
+        category: category || '일반',
+        notes: notes || '',
+        createdAt: new Date().toISOString()
+      };
+      events.push(newEvent);
+      writeJSON(CALENDAR_FILE, events);
+      return sendJSON(200, { success: true, event: newEvent });
+    }
+
+    if (pathname === '/api/calendar' && req.method === 'DELETE') {
+      const id = url.searchParams.get('id');
+      if (!id) return sendJSON(400, { error: '삭제할 일정 ID가 필요합니다.' });
+      let events = getCalendarEvents();
+      events = events.filter(e => e.id !== id);
+      writeJSON(CALENDAR_FILE, events);
+      return sendJSON(200, { success: true });
     }
 
     return sendJSON(404, { error: '알 수 없는 API입니다.' });

@@ -12,7 +12,7 @@ function request(path, options = {}, body = null) {
     const reqOptions = {
       hostname: url.hostname,
       port: url.port,
-      path: url.pathname,
+      path: url.pathname + url.search,
       method: options.method || 'GET',
       headers: options.headers || {}
     };
@@ -106,7 +106,7 @@ async function runSelfTest() {
 
   // 6. 비밀번호 10회 실패 시 계정 잠금 점검
   console.log('6. 비밀번호 10회 실패 잠금 방어 점검 (HTTP 실제 호출)...');
-  const bruteUser = 'brute_test_user';
+  const bruteUser = 'brute_test_' + Date.now();
   for (let i = 0; i < 10; i++) {
     const failRes = await request('/api/login', { method: 'POST' }, JSON.stringify({
       username: bruteUser,
@@ -143,6 +143,42 @@ async function runSelfTest() {
   const chatData = chatRes.json();
   assert(chatData && chatData.reply, '산초 AI의 회신(reply)이 존재해야 합니다.');
   console.log(`   ✓ 산초 AI 대화 정상 응답 수신: "${chatData.reply.slice(0, 30)}..."`);
+
+  // 9. 3단계: 스마트 캘린더 CRUD & D-Day 점검
+  console.log('9. 3단계: 스마트 캘린더 (/api/calendar) CRUD 및 D-Day 점검...');
+  const calGetRes = await request('/api/calendar', {
+    headers: { 'Cookie': sessionCookie }
+  });
+  assert(calGetRes.status === 200, '캘린더 목록 조회가 200이어야 합니다.');
+  const calGetData = calGetRes.json();
+  assert(Array.isArray(calGetData.events), 'events 필드가 배열이어야 합니다.');
+  assert(calGetData.events.length > 0, '초기 기본 일정이 1개 이상 존재해야 합니다.');
+  assert(calGetData.events[0].dday, 'D-Day 카운트다운 필드가 계산되어야 합니다.');
+  console.log(`   ✓ 캘린더 목록 조회 및 D-Day 계산 성공 (총 ${calGetData.events.length}개 일정)`);
+
+  // 캘린더 새 일정 등록
+  const newEvRes = await request('/api/calendar', {
+    method: 'POST',
+    headers: { 'Cookie': sessionCookie }
+  }, JSON.stringify({
+    title: '자가테스트 등록 일정',
+    date: new Date().toISOString().slice(0, 10),
+    time: '18:00',
+    location: '연구실',
+    category: '테스트'
+  }));
+  assert(newEvRes.status === 200, '일정 생성이 200이어야 합니다.');
+  const newEvData = newEvRes.json();
+  assert(newEvData.success && newEvData.event.id, '등록된 일정에 고유 ID가 부여되어야 합니다.');
+  console.log(`   ✓ 새 일정 등록 성공 (ID: ${newEvData.event.id})`);
+
+  // 캘린더 일정 삭제
+  const delEvRes = await request(`/api/calendar?id=${newEvData.event.id}`, {
+    method: 'DELETE',
+    headers: { 'Cookie': sessionCookie }
+  });
+  assert(delEvRes.status === 200, '일정 삭제가 200이어야 합니다.');
+  console.log('   ✓ 일정 삭제 성공');
 
   console.log('--- 모든 자가 점검(selftest) 100% 통과 완료! ---');
 }

@@ -364,6 +364,127 @@
     .btn-briefing-action:hover {
       background: #B45309;
     }
+
+    /* 3단계: 스마트 캘린더 스타일 */
+    .calendar-header-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    .calendar-grid-view {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 16px;
+    }
+    .event-card {
+      background: #FFFFFF;
+      border: 1px solid var(--border-soft);
+      border-radius: 14px;
+      padding: 18px 20px;
+      position: relative;
+      transition: all 0.2s ease;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .event-card:hover {
+      border-color: var(--border-warm);
+      box-shadow: 0 4px 16px var(--amber-glow);
+    }
+    .event-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .event-category {
+      font-size: 11px;
+      font-weight: 600;
+      padding: 3px 8px;
+      border-radius: 6px;
+      background: #F3F4F6;
+      color: #374151;
+    }
+    .dday-badge {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 6px;
+      background: #FEF3C7;
+      color: #B45309;
+    }
+    .dday-urgent {
+      background: #FEE2E2;
+      color: #B91C1C;
+    }
+    .event-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: #111827;
+    }
+    .event-meta {
+      font-size: 13px;
+      color: var(--text-muted);
+      display: flex;
+      gap: 12px;
+    }
+    .event-notes {
+      font-size: 13px;
+      color: #4B5563;
+      background: #F9FAFB;
+      padding: 8px 12px;
+      border-radius: 8px;
+      margin-top: 4px;
+    }
+    .event-delete-btn {
+      align-self: flex-end;
+      background: none;
+      border: none;
+      color: #9CA3AF;
+      font-size: 12px;
+      cursor: pointer;
+      padding: 4px;
+    }
+    .event-delete-btn:hover {
+      color: #EF4444;
+    }
+
+    .calendar-add-card {
+      background: #FFFFFF;
+      border: 1px solid var(--border-soft);
+      border-radius: 14px;
+      padding: 20px;
+      margin-bottom: 24px;
+    }
+    .cal-form-row {
+      display: grid;
+      grid-template-columns: 2fr 1.2fr 1fr 1fr 1fr auto;
+      gap: 10px;
+      align-items: center;
+    }
+    .cal-input {
+      padding: 10px 14px;
+      border: 1px solid var(--border-soft);
+      border-radius: 8px;
+      font-size: 13px;
+      outline: none;
+    }
+    .cal-input:focus {
+      border-color: var(--amber-warm);
+    }
+    .cal-submit-btn {
+      padding: 10px 18px;
+      background: #18181B;
+      color: #FFFFFF;
+      border: none;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .cal-submit-btn:hover {
+      background: #27272A;
+    }
   </style>
 </head>
 <body>
@@ -378,19 +499,19 @@
     </div>
 
     <ul class="menu-list">
-      <li class="menu-item active"><span class="icon">🏠</span><span>대시보드</span></li>
-      <li class="menu-item"><span class="icon">📅</span><span>일정</span></li>
-      <li class="menu-item"><span class="icon">📁</span><span>프로젝트</span></li>
-      <li class="menu-item"><span class="icon">📊</span><span>WBS</span></li>
-      <li class="menu-item"><span class="icon">✉️</span><span>메일</span></li>
-      <li class="menu-item"><span class="icon">💬</span><span>메신저</span></li>
-      <li class="menu-item"><span class="icon">📝</span><span>회의록</span></li>
-      <li class="menu-item"><span class="icon">📑</span><span>결재</span></li>
-      <li class="menu-item"><span class="icon">🎯</span><span>목표</span></li>
-      <li class="menu-item"><span class="icon">⏱️</span><span>공수</span></li>
-      <li class="menu-item"><span class="icon">📚</span><span>지식노트</span></li>
-      <li class="menu-item"><span class="icon">⚡</span><span>워크플로</span></li>
-      <li class="menu-item"><span class="icon">⚙️</span><span>설정</span></li>
+      <li class="menu-item active" data-view="dashboard"><span class="icon">🏠</span><span>대시보드</span></li>
+      <li class="menu-item" data-view="calendar"><span class="icon">📅</span><span>일정</span></li>
+      <li class="menu-item" data-view="project"><span class="icon">📁</span><span>프로젝트</span></li>
+      <li class="menu-item" data-view="wbs"><span class="icon">📊</span><span>WBS</span></li>
+      <li class="menu-item" data-view="mail"><span class="icon">✉️</span><span>메일</span></li>
+      <li class="menu-item" data-view="messenger"><span class="icon">💬</span><span>메신저</span></li>
+      <li class="menu-item" data-view="meeting"><span class="icon">📝</span><span>회의록</span></li>
+      <li class="menu-item" data-view="approval"><span class="icon">📑</span><span>결재</span></li>
+      <li class="menu-item" data-view="goal"><span class="icon">🎯</span><span>목표</span></li>
+      <li class="menu-item" data-view="timesheet"><span class="icon">⏱️</span><span>공수</span></li>
+      <li class="menu-item" data-view="notes"><span class="icon">📚</span><span>지식노트</span></li>
+      <li class="menu-item" data-view="workflow"><span class="icon">⚡</span><span>워크플로</span></li>
+      <li class="menu-item" data-view="settings"><span class="icon">⚙️</span><span>설정</span></li>
     </ul>
 
     <div class="sidebar-footer">
@@ -402,64 +523,94 @@
     </div>
   </aside>
 
-  <!-- 메인 대시보드 화면 -->
+  <!-- 메인 화면 컨테이너 -->
   <main class="main-content">
     <div class="top-bar">
       <div>
         <h2 id="welcomeHeading">환영합니다!</h2>
-        <p style="font-size: 14px; color: var(--text-muted); margin-top: 4px;">오늘 하루도 산초와 함께 효율적으로 시작하세요.</p>
+        <p style="font-size: 14px; color: var(--text-muted); margin-top: 4px;" id="viewSubtitle">오늘 하루도 산초와 함께 효율적으로 시작하세요.</p>
       </div>
       <div class="status-pill">
         <span class="status-dot"></span>
-        <span>PC 로컬 AI 두뇌 정상 연결됨</span>
+        <span id="systemStatusText">PC 로컬 AI 두뇌 정상 연결됨</span>
       </div>
     </div>
 
-    <!-- 2단계: 아침 출근 브리핑 배너 -->
-    <div class="briefing-banner" id="briefingBanner">
-      <div class="briefing-content">
-        <span class="briefing-icon">☀️</span>
-        <div>
-          <div class="briefing-title" id="briefingTitle">오늘의 산초 모닝 브리핑</div>
-          <div class="briefing-desc" id="briefingDesc">잠시만 기다려주세요, 오늘의 중요 일정과 업무 현황을 분석하고 있습니다...</div>
+    <!-- 1) 대시보드 뷰 패널 -->
+    <div id="view-dashboard" class="view-panel">
+      <!-- 2단계: 아침 출근 브리핑 배너 -->
+      <div class="briefing-banner" id="briefingBanner">
+        <div class="briefing-content">
+          <span class="briefing-icon">☀️</span>
+          <div>
+            <div class="briefing-title" id="briefingTitle">오늘의 산초 모닝 브리핑</div>
+            <div class="briefing-desc" id="briefingDesc">잠시만 기다려주세요, 오늘의 중요 일정과 업무 현황을 분석하고 있습니다...</div>
+          </div>
+        </div>
+        <button class="btn-briefing-action" id="refreshBriefingBtn">브리핑 새로고침</button>
+      </div>
+
+      <!-- 요약 카드 3종 -->
+      <div class="dashboard-grid">
+        <div class="card">
+          <h3><span>📅</span> 오늘의 일정</h3>
+          <p id="scheduleCardSummary">오늘 예정된 미팅이나 주요 일정을 로딩 중입니다...</p>
+        </div>
+        <div class="card">
+          <h3><span>📊</span> WBS 긴급 일감</h3>
+          <p id="wbsCardSummary">마감이 임박한 세부 일감을 로딩 중입니다...</p>
+        </div>
+        <div class="card">
+          <h3><span>🎯</span> 이번 달 목표</h3>
+          <p id="goalCardSummary">목표 달성률 게이지를 계산 중입니다...</p>
         </div>
       </div>
-      <button class="btn-briefing-action" id="refreshBriefingBtn">브리핑 새로고침</button>
-    </div>
 
-    <!-- 요약 카드 3종 -->
-    <div class="dashboard-grid">
-      <div class="card">
-        <h3><span>📅</span> 오늘의 일정</h3>
-        <p id="scheduleCardSummary">오늘 예정된 미팅이나 주요 일정을 로딩 중입니다...</p>
-      </div>
-      <div class="card">
-        <h3><span>📊</span> WBS 긴급 일감</h3>
-        <p id="wbsCardSummary">마감이 임박한 세부 일감을 로딩 중입니다...</p>
-      </div>
-      <div class="card">
-        <h3><span>🎯</span> 이번 달 목표</h3>
-        <p id="goalCardSummary">목표 달성률 게이지를 계산 중입니다...</p>
-      </div>
-    </div>
-
-    <!-- 중앙 AI 채팅 영역 -->
-    <div class="chat-section">
-      <h3><span>✨</span> 산초 AI 비서 실시간 대화</h3>
-      <div class="chat-box" id="chatBox">
-        <div class="chat-message chat-bot">
-          안녕하세요! 저는 당신의 개인 비서 <strong>Sancho(산초)</strong>입니다.<br>
-          오늘 어떤 업무를 도와드릴까요?
+      <!-- 중앙 AI 채팅 영역 -->
+      <div class="chat-section" style="margin-top: 24px;">
+        <h3><span>✨</span> 산초 AI 비서 실시간 대화</h3>
+        <div class="chat-box" id="chatBox">
+          <div class="chat-message chat-bot">
+            안녕하세요! 저는 당신의 개인 비서 <strong>Sancho(산초)</strong>입니다.<br>
+            오늘 어떤 업무를 도와드릴까요?
+          </div>
+        </div>
+        <div class="chat-input-bar">
+          <input type="text" class="chat-input" id="chatInput" placeholder="산초에게 질문하거나 업무를 지시하세요... (예: 오늘 일정 브리핑해줘)">
+          <button class="btn-send" id="sendBtn">보내기</button>
         </div>
       </div>
-      <div class="chat-input-bar">
-        <input type="text" class="chat-input" id="chatInput" placeholder="산초에게 질문하거나 업무를 지시하세요... (예: 오늘 일정 브리핑해줘)">
-        <button class="btn-send" id="sendBtn">보내기</button>
+    </div>
+
+    <!-- 2) 스마트 캘린더 뷰 패널 (3단계) -->
+    <div id="view-calendar" class="view-panel" style="display:none;">
+      <!-- 일정 등록 카드 -->
+      <div class="calendar-add-card">
+        <h3 style="font-size: 15px; font-weight: 700; margin-bottom: 12px; color: #111827;">➕ 새로운 스마트 일정 등록</h3>
+        <div class="cal-form-row">
+          <input type="text" id="newCalTitle" class="cal-input" placeholder="일정 제목 (예: 4분기 비서 플랫폼 회의)">
+          <input type="date" id="newCalDate" class="cal-input">
+          <input type="text" id="newCalTime" class="cal-input" placeholder="시간 (예: 14:00 - 15:30)">
+          <input type="text" id="newCalLocation" class="cal-input" placeholder="장소 (예: 회의실 A)">
+          <input type="text" id="newCalCategory" class="cal-input" placeholder="분류 (회의/개발/보고)">
+          <button id="addCalBtn" class="cal-submit-btn">일정 추가</button>
+        </div>
+      </div>
+
+      <!-- 일정 카드 그리드 -->
+      <div class="calendar-header-bar">
+        <h3 style="font-size: 16px; font-weight: 700; color: #111827;">📌 등록된 스마트 일정 & D-Day 실시간 현황</h3>
+        <span style="font-size: 13px; color: var(--text-muted);" id="calCountLabel">총 0개 일정</span>
+      </div>
+      <div class="calendar-grid-view" id="calendarList">
+        <!-- 캘린더 이벤트 카드 동적 렌더링 -->
       </div>
     </div>
   </main>
 
   <script>
+    let currentUserData = null;
+
     // 로그인 상태 검증 및 브리핑 로드
     async function initDashboard() {
       try {
@@ -469,15 +620,44 @@
           window.location.href = '/login.html';
           return;
         }
+        currentUserData = data.user;
         if (data.user) {
           document.getElementById('userNameLabel').textContent = data.user.name || data.user.username;
           document.getElementById('welcomeHeading').textContent = `${data.user.name || data.user.username}님, 좋은 아침입니다.`;
         }
         loadBriefing();
+        loadCalendar();
       } catch (e) {
         window.location.href = '/login.html';
       }
     }
+
+    // 메뉴 전환 핸들러
+    document.querySelectorAll('.menu-list .menu-item').forEach(item => {
+      item.addEventListener('click', () => {
+        const view = item.getAttribute('data-view');
+        document.querySelectorAll('.menu-list .menu-item').forEach(m => m.classList.remove('active'));
+        item.classList.add('active');
+
+        // 패널 전환
+        document.querySelectorAll('.view-panel').forEach(p => p.style.display = 'none');
+        const targetPanel = document.getElementById(`view-${view}`);
+        if (targetPanel) {
+          targetPanel.style.display = 'block';
+        }
+
+        // 헤더 자막 변경
+        const subtitle = document.getElementById('viewSubtitle');
+        if (view === 'dashboard') {
+          subtitle.textContent = '오늘 하루도 산초와 함께 효율적으로 시작하세요.';
+        } else if (view === 'calendar') {
+          subtitle.textContent = '스마트 캘린더: D-Day 자동 카운트다운 및 회의 일정 관리';
+          loadCalendar();
+        } else {
+          subtitle.textContent = `${item.querySelector('span:last-child').textContent} 모듈이 연동 준비 중입니다.`;
+        }
+      });
+    });
 
     // 2단계: 출근 브리핑 데이터 가져오기
     async function loadBriefing() {
@@ -497,6 +677,91 @@
     }
 
     document.getElementById('refreshBriefingBtn').addEventListener('click', loadBriefing);
+
+    // 3단계: 스마트 캘린더 데이터 가져오기 및 렌더링
+    async function loadCalendar() {
+      try {
+        const res = await fetch('/api/calendar');
+        if (!res.ok) return;
+        const data = await res.json();
+        const listEl = document.getElementById('calendarList');
+        const countLabel = document.getElementById('calCountLabel');
+        listEl.innerHTML = '';
+        countLabel.textContent = `총 ${data.events.length}개 일정`;
+
+        data.events.forEach(ev => {
+          const card = document.createElement('div');
+          card.className = 'event-card';
+          const isUrgent = ev.dday === 'D-Day' || ev.dday === 'D-1';
+          card.innerHTML = `
+            <div class="event-top">
+              <span class="event-category">${ev.category || '일반'}</span>
+              <span class="dday-badge ${isUrgent ? 'dday-urgent' : ''}">${ev.dday}</span>
+            </div>
+            <div class="event-title">${ev.title}</div>
+            <div class="event-meta">
+              <span>📅 ${ev.date} (${ev.time || '종일'})</span>
+              <span>📍 ${ev.location || '미지정'}</span>
+            </div>
+            ${ev.notes ? `<div class="event-notes">${ev.notes}</div>` : ''}
+            <button class="event-delete-btn" onclick="deleteCalendarEvent('${ev.id}')">삭제</button>
+          `;
+          listEl.appendChild(card);
+        });
+      } catch (err) {
+        console.error('캘린더 로드 실패:', err);
+      }
+    }
+
+    // 일정 추가 핸들러
+    document.getElementById('addCalBtn').addEventListener('click', async () => {
+      const title = document.getElementById('newCalTitle').value.trim();
+      const date = document.getElementById('newCalDate').value;
+      const time = document.getElementById('newCalTime').value.trim();
+      const location = document.getElementById('newCalLocation').value.trim();
+      const category = document.getElementById('newCalCategory').value.trim();
+
+      if (!title || !date) {
+        alert('일정 제목과 날짜는 필수 입력 항목입니다.');
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/calendar', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ title, date, time, location, category })
+        });
+        if (res.ok) {
+          document.getElementById('newCalTitle').value = '';
+          document.getElementById('newCalTime').value = '';
+          document.getElementById('newCalLocation').value = '';
+          document.getElementById('newCalCategory').value = '';
+          loadCalendar();
+        } else {
+          const errData = await res.json();
+          alert(errData.error || '일정 등록 실패');
+        }
+      } catch (e) {
+        alert('서버 통신 오류');
+      }
+    });
+
+    // 일정 삭제 핸들러
+    window.deleteCalendarEvent = async function(id) {
+      if (!confirm('이 일정을 삭제하시겠습니까?')) return;
+      try {
+        const res = await fetch(`/api/calendar?id=${encodeURIComponent(id)}`, { method: 'DELETE' });
+        if (res.ok) {
+          loadCalendar();
+        }
+      } catch (e) {
+        alert('삭제 실패');
+      }
+    };
+
+    // 오늘 날짜로 캘린더 기본값 세팅
+    document.getElementById('newCalDate').value = new Date().toISOString().slice(0, 10);
 
     // 2단계: AI 대화 처리
     const chatBox = document.getElementById('chatBox');
