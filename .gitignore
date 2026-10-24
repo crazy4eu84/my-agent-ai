@@ -1,0 +1,23 @@
+# 환경 변수 및 비밀 키
+.env
+.env.*
+!.env.example
+
+# 의존성 패키지
+node_modules/
+
+# 산초 계정, 대화 기록, 메모리/기억 등 개인 데이터
+data/
+storage/
+memory/
+sessions/
+logs/
+*.log
+*.sqlite
+*.db
+
+# OS 및 에디터 임시 파일
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
