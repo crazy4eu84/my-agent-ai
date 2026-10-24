@@ -2205,14 +2205,33 @@
       const text = input.value.trim();
       if (!text) return;
       input.value = '';
+      input.disabled = true;
+
+      const feed = document.getElementById('messengerFeed');
+      let loadingDiv = null;
+      if (currentMessengerChannel === '비서봇' || text.includes('산초') || text.includes('비서')) {
+        loadingDiv = document.createElement('div');
+        loadingDiv.className = 'chat-message chat-bot';
+        loadingDiv.style.opacity = '0.7';
+        loadingDiv.style.fontStyle = 'italic';
+        loadingDiv.innerText = '⚡ 산초 AI가 로컬 두뇌를 가동하여 답변을 작성 중입니다...';
+        feed.appendChild(loadingDiv);
+        feed.scrollTop = feed.scrollHeight;
+      }
+
       try {
         const res = await fetch('/api/messages', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ channel: currentMessengerChannel, text })
         });
-        if (res.ok) loadMessenger();
-      } catch (e) { alert('메시지 전송 실패'); }
+        if (res.ok) await loadMessenger();
+      } catch (e) {
+        alert('메시지 전송 실패');
+      } finally {
+        input.disabled = false;
+        input.focus();
+      }
     });
 
     document.getElementById('messengerInput').addEventListener('keydown', (e) => {
@@ -2552,6 +2571,16 @@
       if (!text) return;
       appendMessage(text, true);
       chatInput.value = '';
+      chatInput.disabled = true;
+      sendBtn.disabled = true;
+
+      const loadingDiv = document.createElement('div');
+      loadingDiv.className = 'chat-message chat-bot';
+      loadingDiv.style.opacity = '0.7';
+      loadingDiv.style.fontStyle = 'italic';
+      loadingDiv.innerText = '⚡ 산초(Antigravity 두뇌)가 생각 중입니다...';
+      chatBox.appendChild(loadingDiv);
+      chatBox.scrollTop = chatBox.scrollHeight;
 
       try {
         const res = await fetch('/api/chat', {
@@ -2560,13 +2589,19 @@
           body: JSON.stringify({ message: text })
         });
         const data = await res.json();
+        chatBox.removeChild(loadingDiv);
         if (res.ok) {
           appendMessage(data.reply, false);
         } else {
           appendMessage(`[오류] ${data.error || '응답을 받지 못했습니다.'}`, false);
         }
       } catch (e) {
+        if (loadingDiv.parentNode) chatBox.removeChild(loadingDiv);
         appendMessage('[오류] 서버와의 연결에 실패했습니다.', false);
+      } finally {
+        chatInput.disabled = false;
+        sendBtn.disabled = false;
+        chatInput.focus();
       }
     }
 

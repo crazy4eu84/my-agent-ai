@@ -133,8 +133,14 @@ async function runSelfTest() {
   assert(briefingData.stats && typeof briefingData.stats.goalProgress === 'number', '통계 데이터가 포함되어야 합니다.');
   console.log(`   ✓ 아침 브리핑 정상 수신: "${briefingData.briefingText.slice(0, 30)}..."`);
 
-  // 8. 2단계: 실시간 AI 비서 대화 API 점검
-  console.log('8. 2단계: 실시간 AI 대화 API (/api/chat) 점검...');
+  // 8. 2단계: Antigravity 로컬 에이전트 브리지 및 실시간 AI 대화 API 점검
+  console.log('8. 2단계: Antigravity 로컬 에이전트 브리지 (/api/bridge/status & /api/chat) 점검...');
+  const bridgeRes = await request('/api/bridge/status', { headers: { 'Cookie': sessionCookie } });
+  assert(bridgeRes.status === 200, '/api/bridge/status 호출이 200이어야 합니다.');
+  const bridgeData = bridgeRes.json();
+  assert(bridgeData.connected === true, 'Antigravity 로컬 브리지가 연결 상태여야 합니다.');
+  console.log(`   ✓ Antigravity 로컬 브리지 연결 확인: [세션 ID: ${bridgeData.conversationId.slice(0, 8)}...]`);
+
   const chatRes = await request('/api/chat', {
     method: 'POST',
     headers: { 'Cookie': sessionCookie }
