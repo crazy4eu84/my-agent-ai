@@ -1051,7 +1051,10 @@
 
       <!-- 중앙 AI 채팅 영역 -->
       <div class="chat-section" style="margin-top: 24px;">
-        <h3><span>✨</span> 산초 AI 비서 실시간 대화</h3>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+          <h3 style="margin: 0;"><span>✨</span> 산초 AI 비서 실시간 대화</h3>
+          <button onclick="switchView('settings')" style="background: #fef3c7; color: #b45309; border: 1px solid #fde68a; padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s;">⚙️ AI 두뇌 키 설정</button>
+        </div>
         <div class="chat-box" id="chatBox">
           <div class="chat-message chat-bot">
             안녕하세요! 저는 당신의 개인 비서 <strong>Sancho(산초)</strong>입니다.<br>
@@ -1441,11 +1444,61 @@
 
     <!-- 14) 설정 패널 -->
     <div id="view-settings" class="view-panel" style="display:none;">
+      <!-- AI 두뇌 및 API 키 설정 카드 (OmniRoute / 만능 키) -->
+      <div class="wbs-container" style="margin-bottom: 24px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+          <h3 style="font-size: 16px; font-weight: 700; color: #111827; margin: 0;">🤖 AI 두뇌 및 API 키 설정 (OmniRoute / 만능 키)</h3>
+          <span id="aiActiveBadge" class="badge" style="background: #e0f2fe; color: #0369a1; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 600;">상태 확인 중...</span>
+        </div>
+        <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 18px; line-height: 1.6;">
+          OmniRoute, OpenRouter, Google Gemini, OpenAI 등 <strong>가지고 계신 어떤 API 키든 등록</strong>하시면 안티그래비티 프로그램을 켜두지 않아도 산초 혼자서 24시간 완벽하게 돌아갑니다. (키가 없거나 오프라인 상태여도 스마트 로컬 엔진으로 정상 작동합니다)
+        </p>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+          <div class="form-group">
+            <label style="font-size: 13px; font-weight: 600; color: #374151; display: block; margin-bottom: 6px;">AI 제공자 (Provider)</label>
+            <select id="cfgProvider" onchange="onProviderChange()" style="width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid #d1d5db; font-size: 14px; background: white;">
+              <option value="omniroute">🌟 OmniRoute / OpenRouter (OpenAI 호환 게이트웨이)</option>
+              <option value="gemini">🔵 Google Gemini 직접 연동</option>
+              <option value="openai">🟢 OpenAI (ChatGPT) 직접 연동</option>
+              <option value="claude">🟣 Anthropic Claude 직접 연동</option>
+              <option value="custom">⚙️ 커스텀 엔드포인트 / 로컬 LLM</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label style="font-size: 13px; font-weight: 600; color: #374151; display: block; margin-bottom: 6px;">모델명 (Model Name)</label>
+            <input type="text" id="cfgModel" placeholder="예: google/gemini-2.5-flash 또는 gpt-4o-mini" style="width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid #d1d5db; font-size: 14px; box-sizing: border-box;">
+          </div>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 16px;">
+          <label style="font-size: 13px; font-weight: 600; color: #374151; display: block; margin-bottom: 6px;">API 기본 주소 (Base URL)</label>
+          <input type="text" id="cfgBaseUrl" placeholder="예: https://openrouter.ai/api/v1 또는 OmniRoute 엔드포인트 주소" style="width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid #d1d5db; font-size: 14px; box-sizing: border-box;">
+          <div style="font-size: 12px; color: #6b7280; margin-top: 4px;">OmniRoute나 커스텀 프록시를 쓰실 경우 발급받으신 주소(예: https://api.omniroute.ai/v1 등)를 입력하세요.</div>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 18px;">
+          <label style="font-size: 13px; font-weight: 600; color: #374151; display: block; margin-bottom: 6px;">API 키 (API Key)</label>
+          <div style="display: flex; gap: 8px;">
+            <input type="password" id="cfgApiKey" placeholder="발급받으신 API 키를 붙여넣으세요 (예: sk-or-... / AIza...)" style="flex: 1; padding: 10px 12px; border-radius: 8px; border: 1px solid #d1d5db; font-size: 14px; box-sizing: border-box;">
+            <button type="button" onclick="toggleKeyVisibility()" style="padding: 0 16px; background: #f3f4f6; border: 1px solid #d1d5db; border-radius: 8px; cursor: pointer; font-size: 14px;" title="키 보기/가리기">👁️</button>
+          </div>
+          <div id="cfgKeyStatusHint" style="font-size: 12px; color: #6b7280; margin-top: 5px;">현재 등록된 키 상태 확인 중...</div>
+        </div>
+
+        <div style="display: flex; gap: 10px; align-items: center;">
+          <button onclick="testAndSaveAIConfig()" id="btnSaveAIConfig" style="background: var(--primary); color: white; padding: 10px 20px; border-radius: 8px; border: none; font-weight: 600; cursor: pointer; transition: all 0.2s;">💾 저장 및 연결 테스트</button>
+          <button onclick="resetAIConfigToDefault()" style="background: #f3f4f6; color: #374151; padding: 10px 16px; border-radius: 8px; border: 1px solid #d1d5db; cursor: pointer;">기본값 초기화</button>
+          <span id="aiConfigSaveStatus" style="font-size: 13px; margin-left: 8px;"></span>
+        </div>
+        <div id="aiTestResultBox" style="margin-top: 14px; padding: 12px 14px; border-radius: 8px; font-size: 13px; display: none;"></div>
+      </div>
+
       <div class="wbs-container">
         <h3 style="font-size: 16px; font-weight: 700; color: #111827; margin-bottom: 16px;">⚙️ 플랫폼 시스템 환경 & 보안 설정</h3>
         <div style="font-size: 14px; line-height: 2.0; color: #374151;">
-          <div>• <strong>플랫폼 이름:</strong> 나의 AI 비서 Sancho (엔터프라이즈 로컬 버전)</div>
-          <div>• <strong>AI 두뇌:</strong> Google Antigravity 로컬 슈퍼 두뇌</div>
+          <div>• <strong>플랫폼 이름:</strong> 나의 AI 비서 Sancho (엔터프라이즈 로컬 독립 버전)</div>
+          <div>• <strong>AI 두뇌:</strong> OmniRoute / 만능 API 키 + 로컬 스마트 어시스턴트 엔진</div>
           <div>• <strong>보안 암호화:</strong> Node.js scrypt 해싱 (Salt 16 bytes, 64 derivedKey)</div>
           <div>• <strong>패키지 무결성:</strong> 외부 의존성 0개 (순수 Node.js 내장 모듈 100%)</div>
           <div>• <strong>데이터 저장소:</strong> data/ 로컬 암호화 안전 저장소 (.gitignore 보호)</div>
@@ -1477,10 +1530,172 @@
         }
         loadBriefing();
         loadCalendar();
+        loadAIConfig();
       } catch (e) {
         window.location.href = '/login.html';
       }
     }
+
+    // 전역 뷰 전환 헬퍼
+    window.switchView = function(view) {
+      const item = document.querySelector(`.menu-list .menu-item[data-view="${view}"]`);
+      if (item) item.click();
+    };
+
+    // 만능 AI 두뇌 설정 로드
+    async function loadAIConfig() {
+      try {
+        const res = await fetch('/api/ai/config');
+        const data = await res.json();
+        if (res.ok) {
+          const provSelect = document.getElementById('cfgProvider');
+          if (provSelect) provSelect.value = data.provider || 'omniroute';
+          const baseInput = document.getElementById('cfgBaseUrl');
+          if (baseInput) baseInput.value = data.baseUrl || 'https://openrouter.ai/api/v1';
+          const modelInput = document.getElementById('cfgModel');
+          if (modelInput) modelInput.value = data.model || 'google/gemini-2.5-flash';
+
+          const badge = document.getElementById('aiActiveBadge');
+          const hint = document.getElementById('cfgKeyStatusHint');
+          const statusPill = document.getElementById('systemStatusText');
+
+          if (data.hasKey) {
+            if (badge) {
+              badge.textContent = `연결됨 (${(data.provider || 'AI').toUpperCase()})`;
+              badge.style.background = '#dcfce7';
+              badge.style.color = '#15803d';
+            }
+            if (hint) {
+              hint.innerHTML = `<span style="color:#15803d; font-weight:600;">✓ 등록된 키 활성화됨:</span> <code>${data.maskedKey}</code> (새 키를 입력하면 교체됩니다)`;
+            }
+            if (statusPill) {
+              statusPill.textContent = `OmniRoute / AI 두뇌 정상 가동 (${data.model})`;
+            }
+          } else {
+            if (badge) {
+              badge.textContent = '스마트 로컬 엔진';
+              badge.style.background = '#e0f2fe';
+              badge.style.color = '#0369a1';
+            }
+            if (hint) {
+              hint.innerHTML = '현재 등록된 외부 키가 없습니다. (키를 입력하시면 해당 AI 모델로 즉시 전환됩니다)';
+            }
+            if (statusPill) {
+              statusPill.textContent = '산초 스마트 로컬 엔진 가동 중';
+            }
+          }
+        }
+      } catch (e) {
+        console.error('AI 설정 로드 실패:', e);
+      }
+    }
+
+    window.onProviderChange = function() {
+      const p = document.getElementById('cfgProvider').value;
+      const baseUrlInput = document.getElementById('cfgBaseUrl');
+      const modelInput = document.getElementById('cfgModel');
+
+      if (p === 'omniroute') {
+        baseUrlInput.value = 'https://openrouter.ai/api/v1';
+        modelInput.value = 'google/gemini-2.5-flash';
+      } else if (p === 'gemini') {
+        baseUrlInput.value = 'https://generativelanguage.googleapis.com';
+        modelInput.value = 'gemini-2.5-flash';
+      } else if (p === 'openai') {
+        baseUrlInput.value = 'https://api.openai.com/v1';
+        modelInput.value = 'gpt-4o-mini';
+      } else if (p === 'claude') {
+        baseUrlInput.value = 'https://api.anthropic.com';
+        modelInput.value = 'claude-3-5-haiku-20241022';
+      } else {
+        baseUrlInput.value = 'http://localhost:11434/v1';
+        modelInput.value = 'custom-model';
+      }
+    };
+
+    window.toggleKeyVisibility = function() {
+      const input = document.getElementById('cfgApiKey');
+      input.type = input.type === 'password' ? 'text' : 'password';
+    };
+
+    window.testAndSaveAIConfig = async function() {
+      const provider = document.getElementById('cfgProvider').value;
+      const baseUrl = document.getElementById('cfgBaseUrl').value.trim();
+      const model = document.getElementById('cfgModel').value.trim();
+      const apiKey = document.getElementById('cfgApiKey').value.trim();
+      const btn = document.getElementById('btnSaveAIConfig');
+      const statusEl = document.getElementById('aiConfigSaveStatus');
+      const resultBox = document.getElementById('aiTestResultBox');
+
+      btn.disabled = true;
+      statusEl.style.color = '#2563eb';
+      statusEl.textContent = '저장 및 연결 테스트 중...';
+      resultBox.style.display = 'none';
+
+      try {
+        const saveRes = await fetch('/api/ai/config', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ provider, baseUrl, model, apiKey })
+        });
+        const saveData = await saveRes.json();
+        if (!saveRes.ok) throw new Error(saveData.error || '설정 저장 실패');
+
+        if (apiKey) {
+          const testRes = await fetch('/api/ai/test', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ provider, baseUrl, model, apiKey })
+          });
+          const testData = await testRes.json();
+          if (!testRes.ok) {
+            statusEl.style.color = '#dc2626';
+            statusEl.textContent = '⚠️ 저장 완료 (단, 테스트 실패)';
+            resultBox.style.display = 'block';
+            resultBox.style.background = '#fef2f2';
+            resultBox.style.color = '#991b1b';
+            resultBox.style.border = '1px solid #fecaca';
+            resultBox.innerHTML = `<strong>연결 오류:</strong> ${testData.error || 'API 응답 없음'}<br><small>Base URL이나 API 키, 모델명이 올바른지 확인해 주세요.</small>`;
+          } else {
+            statusEl.style.color = '#16a34a';
+            statusEl.textContent = '✓ 저장 및 연결 테스트 성공!';
+            resultBox.style.display = 'block';
+            resultBox.style.background = '#f0fdf4';
+            resultBox.style.color = '#166534';
+            resultBox.style.border = '1px solid #bbf7d0';
+            resultBox.innerHTML = `<strong>연결 성공! AI 첫 응답:</strong><br>"${testData.reply}"`;
+            document.getElementById('cfgApiKey').value = '';
+          }
+        } else {
+          statusEl.style.color = '#16a34a';
+          statusEl.textContent = '✓ 설정이 저장되었습니다. (스마트 로컬 엔진 모드)';
+        }
+
+        await loadAIConfig();
+      } catch (err) {
+        statusEl.style.color = '#dc2626';
+        statusEl.textContent = '오류: ' + err.message;
+      } finally {
+        btn.disabled = false;
+      }
+    };
+
+    window.resetAIConfigToDefault = async function() {
+      if (!confirm('AI 설정을 기본값(OmniRoute / 로컬 스마트 엔진)으로 초기화하시겠습니까?')) return;
+      await fetch('/api/ai/config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          provider: 'omniroute',
+          baseUrl: 'https://openrouter.ai/api/v1',
+          model: 'google/gemini-2.5-flash',
+          apiKey: ''
+        })
+      });
+      document.getElementById('cfgApiKey').value = '';
+      await loadAIConfig();
+      alert('기본값으로 초기화되었습니다.');
+    };
 
     // 메뉴 전환 핸들러
     document.querySelectorAll('.menu-list .menu-item').forEach(item => {
@@ -1537,7 +1752,8 @@
           subtitle.textContent = '자가 진화 AI 스킬 워크플로 자동화 허브';
           loadSkills();
         } else if (view === 'settings') {
-          subtitle.textContent = '시스템 환경설정 & 엔터프라이즈 보안 상태';
+          subtitle.textContent = 'AI 두뇌 키 설정 & 시스템 환경설정';
+          loadAIConfig();
         } else {
           subtitle.textContent = `${item.querySelector('span:last-child').textContent} 모듈이 연동 준비 중입니다.`;
         }
@@ -2578,7 +2794,7 @@
       loadingDiv.className = 'chat-message chat-bot';
       loadingDiv.style.opacity = '0.7';
       loadingDiv.style.fontStyle = 'italic';
-      loadingDiv.innerText = '⚡ 산초(Antigravity 두뇌)가 생각 중입니다...';
+      loadingDiv.innerText = '⚡ 산초 AI가 생각 중입니다...';
       chatBox.appendChild(loadingDiv);
       chatBox.scrollTop = chatBox.scrollHeight;
 

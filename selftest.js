@@ -133,13 +133,25 @@ async function runSelfTest() {
   assert(briefingData.stats && typeof briefingData.stats.goalProgress === 'number', '통계 데이터가 포함되어야 합니다.');
   console.log(`   ✓ 아침 브리핑 정상 수신: "${briefingData.briefingText.slice(0, 30)}..."`);
 
-  // 8. 2단계: Antigravity 로컬 에이전트 브리지 및 실시간 AI 대화 API 점검
-  console.log('8. 2단계: Antigravity 로컬 에이전트 브리지 (/api/bridge/status & /api/chat) 점검...');
-  const bridgeRes = await request('/api/bridge/status', { headers: { 'Cookie': sessionCookie } });
-  assert(bridgeRes.status === 200, '/api/bridge/status 호출이 200이어야 합니다.');
-  const bridgeData = bridgeRes.json();
-  assert(bridgeData.connected === true, 'Antigravity 로컬 브리지가 연결 상태여야 합니다.');
-  console.log(`   ✓ Antigravity 로컬 브리지 연결 확인: [세션 ID: ${bridgeData.conversationId.slice(0, 8)}...]`);
+  // 8. 2단계: 만능 AI 두뇌 설정 (/api/ai/config) 및 실시간 대화 점검
+  console.log('8. 2단계: 만능 AI 두뇌 설정 (/api/ai/config & /api/chat) 점검...');
+  const aiCfgGetRes = await request('/api/ai/config', { headers: { 'Cookie': sessionCookie } });
+  assert(aiCfgGetRes.status === 200, '/api/ai/config 조회 200 성공');
+  const aiCfgGetData = aiCfgGetRes.json();
+  assert(aiCfgGetData.provider && aiCfgGetData.baseUrl, 'AI 설정 필드가 올바르게 제공되어야 합니다.');
+  console.log(`   ✓ 만능 AI 두뇌 설정 조회 완료 [기본 제공자: ${aiCfgGetData.provider}]`);
+
+  const aiCfgPostRes = await request('/api/ai/config', {
+    method: 'POST',
+    headers: { 'Cookie': sessionCookie }
+  }, JSON.stringify({
+    provider: 'omniroute',
+    baseUrl: 'https://openrouter.ai/api/v1',
+    model: 'google/gemini-2.5-flash',
+    apiKey: ''
+  }));
+  assert(aiCfgPostRes.status === 200, '/api/ai/config 저장 200 성공');
+  console.log('   ✓ 만능 AI 두뇌 설정 저장 확인 완료');
 
   const chatRes = await request('/api/chat', {
     method: 'POST',
